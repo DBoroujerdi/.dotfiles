@@ -1,0 +1,28 @@
+[
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-l": "project_panel::ToggleFocus",
+      "ctrl-j": "terminal_panel::ToggleFocus"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-l": "project_panel::ToggleFocus",
+      "ctrl-k": "terminal_panel::ToggleFocus"
+    }
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "k": "menu::SelectPrev",
+      "j": "menu::SelectNext",
+      "h": "project_panel::CollapseSelectedEntry",
+      "l": "project_panel::ExpandSelectedEntry",
+      "o": "project_panel::Open",
+      "ctrl-h": "project_panel::ToggleFocus",
+      "ctrl-enter": "project_panel::Open"
+    }
+  }
+]

@@ -1,0 +1,26 @@
+[alias]
+	co = checkout
+	br = branch
+	ci = commit
+	st = status
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+[github]
+	user = dboroujerdi
+[diff]
+	cmd = nvim -f -c \"DiffviewOpen\"
+[merge]
+	tool = nvim
+[mergetool "nvim"]
+	cmd = nvim -f -c \"DiffviewOpen\"
+[mergetool]
+	prompt = false
+	keepBackup = false
+[commit]
+	gpgsign = true
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[include]
+        path = ~/.gitconfig.local
