@@ -190,6 +190,13 @@ map('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 -- netrw
 map('n', '<C-.>', ':Explore<cr>', { desc = 'Open netrw' })
 
+-- Navigating Splits
+map('n', '<C-l>', '<C-w>l', { desc = 'Right split', noremap = true, silent = true })
+map('n', '<C-h>', '<C-w>h', { desc = 'Left split', noremap = true, silent = true })
+map('n', '<C-j>', '<C-w>j', { desc = 'Down split', noremap = true, silent = true })
+map('n', '<C-k>', '<C-w>k', { desc = 'Up split', noremap = true, silent = true })
+map('n', '<leader>o', ':only<cr>', { noremap = true, silent = true })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
