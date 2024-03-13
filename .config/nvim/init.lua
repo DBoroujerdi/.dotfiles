@@ -389,6 +389,10 @@ require('lazy').setup {
       vim.keymap.set('n', '<leader>sp', builtin.git_files, { desc = '[S]earch git files in [P]roject' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
+      -- Git shortcuts
+      vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = '[G]it [C]ommits' })
+      vim.keymap.set('n', '<leader>gp', builtin.git_bcommits, { desc = '[G]it commits with [P]review' })
+
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
         -- You can pass additional configuration to telescope to change theme, layout, etc.
