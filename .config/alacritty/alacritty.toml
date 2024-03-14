@@ -1,0 +1,41 @@
+# themes from https://github.com/alacritty/alacritty-theme
+[window]
+decorations = "full"
+dynamic_padding = true
+opacity = 0.95
+option_as_alt = "Both"
+startup_mode = "Fullscreen"
+
+[mouse]
+  hide_when_typing = true
+
+[font]
+size = 16
+
+[font.bold]
+family = "SFMono Nerd Font"
+style = "Bold"
+
+[font.bold_italic]
+family = "SFMono Nerd Font"
+style = "Bold Italic"
+
+[font.italic]
+family = "SFMono Nerd Font"
+style = "Italic"
+
+[font.normal]
+family = "SFMono Nerd Font"
+style = "Regular"
+
+[keyboard]
+bindings = [
+  { key = "F12", action = "ToggleMaximized" },
+  { key = "F12", action = "ToggleSimpleFullscreen" },
+
+  # unbind these so that i can navigate splits in nvim
+  { key =  "h",  mods = "Control", action = "ReceiveChar" },
+  { key =  "l",  mods = "Control", action = "ReceiveChar" },
+  { key =  "k",  mods = "Control", action = "ReceiveChar" },
+  { key =  "j",  mods = "Control", action = "ReceiveChar" }
+]
