@@ -187,9 +187,6 @@ map('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 map('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 map('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
--- netrw
-map('n', '<C-.>', ':Explore<cr>', { desc = 'Open netrw' })
-
 -- Navigating Splits
 map('n', '<C-l>', '<C-w>l', { desc = 'Right split', noremap = true, silent = true })
 map('n', '<C-h>', '<C-w>h', { desc = 'Left split', noremap = true, silent = true })
@@ -295,6 +292,17 @@ require('lazy').setup {
         ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
         ['<leader>g'] = { name = '[G]it', _ = 'which_key_ignore' },
       }
+    end,
+  },
+
+  {
+    'stevearc/oil.nvim',
+    opts = {},
+    -- Optional dependencies
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    config = function()
+      require('oil').setup()
+      vim.keymap.set('n', '-', ':Oil<cr>', { desc = 'Open parent directory' })
     end,
   },
 
