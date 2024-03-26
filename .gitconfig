@@ -4,6 +4,8 @@
 	ci = commit
 	st = status
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	ec = commit --allow-empty -m "Trigger Build"
+	ca = commit --amend
 [github]
 	user = dboroujerdi
 [diff]
@@ -24,3 +26,5 @@
 	required = true
 [include]
         path = ~/.gitconfig.local
+[core]
+	editor = nvim
