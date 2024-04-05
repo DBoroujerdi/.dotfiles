@@ -57,3 +57,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 export GPG_TTY=$(tty)
 
+
+# sst
+export PATH=$HOME/.sst/bin:$PATH
