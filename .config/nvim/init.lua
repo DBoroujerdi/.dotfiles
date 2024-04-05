@@ -264,6 +264,10 @@ require('lazy').setup {
     },
   },
 
+  {
+    'mbbill/undotree',
+  },
+
   -- NOTE: Plugins can also be configured to run lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -317,19 +321,13 @@ require('lazy').setup {
     },
   },
 
-  -- NOTE: Plugins can specify dependencies.
-  --
-  -- The dependencies are proper plugin specifications as well - anything
-  -- you do for a plugin at the top level, you can do for a dependency.
-  --
-  -- Use the `dependencies` key to specify the dependencies of a particular plugin
-
-  { -- Fuzzy Finder (files, lsp, etc)
+  {
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
     branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
+      'debugloop/telescope-undo.nvim',
       { -- If encountering errors, see telescope-fzf-native README for install instructions
         'nvim-telescope/telescope-fzf-native.nvim',
 
@@ -386,7 +384,10 @@ require('lazy').setup {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
           },
+          ['undo'] = {},
         },
+
+        require('telescope').load_extension 'undo',
       }
 
       -- Enable telescope extensions, if they are installed
@@ -411,6 +412,9 @@ require('lazy').setup {
       -- Git shortcuts
       vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = '[G]it [C]ommits' })
       vim.keymap.set('n', '<leader>gp', builtin.git_bcommits, { desc = '[G]it commits with [P]review' })
+
+      -- Undo
+      vim.keymap.set('n', '<leader>u', '<cmd>Telescope undo<cr>')
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
