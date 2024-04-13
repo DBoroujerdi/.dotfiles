@@ -25,5 +25,32 @@
     "font_features": {
       "ligatures": false
     }
+  },
+  "lsp": {
+    "eslint": {
+      "settings": {
+        "codeActionOnSave": {
+          "rules": ["import/order"]
+        }
+      }
+    }
+  },
+  "languages": {
+    "TypeScript": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true
+        }
+      }
+    },
+    "JavaScript": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true
+        }
+      }
+    }
   }
 }
