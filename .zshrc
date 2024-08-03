@@ -19,9 +19,7 @@ SAVEHIST=10000000
 setopt hist_ignore_all_dups
 
 
-eval "$(direnv hook zsh)"
-
-# allow navigate by word in intellij 
+# allow navigate by word in intellij
 if [[ -z $__INTELLIJ_COMMAND_HISTFILE__ ]]; then
     bindkey "\e\eb" backward-word
     bindkey "\e\ef" forward-word
