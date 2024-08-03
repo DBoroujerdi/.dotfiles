@@ -37,18 +37,35 @@
   },
   "languages": {
     "TypeScript": {
+      "format_on_save": {
+        "external": {
+          "command": "node_modules/.bin/prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
       "formatter": {
         "code_actions": {
-          "source.fixAll.eslint": true,
-          "source.organizeImports": true
+          "source.fixAll.eslint": true
+        }
+      }
+    },
+    "TSX": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true
         }
       }
     },
     "JavaScript": {
+      "format_on_save": {
+        "external": {
+          "command": "node_modules/.bin/prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
       "formatter": {
         "code_actions": {
-          "source.fixAll.eslint": true,
-          "source.organizeImports": true
+          "source.fixAll.eslint": true
         }
       }
     }

@@ -3,7 +3,9 @@
     "context": "Editor",
     "bindings": {
       "ctrl-l": "project_panel::ToggleFocus",
-      "ctrl-j": "terminal_panel::ToggleFocus"
+      "ctrl-j": "terminal_panel::ToggleFocus",
+      "cmd-[": "pane::GoBack",
+      "cmd-]": "pane::GoForward"
     }
   },
   {
