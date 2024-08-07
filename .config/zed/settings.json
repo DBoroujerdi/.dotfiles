@@ -7,10 +7,11 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "theme": "Github Light",
   "auto_update": true,
   "vim_mode": true,
-  "ui_font_size": 16,
-  "buffer_font_size": 16,
+  "ui_font_size": 18,
+  "buffer_font_size": 14,
   "format_on_save": "on",
   "project_panel": {
     "dock": "right",
@@ -19,6 +20,10 @@
     "git_status": true,
     "indent_size": 5,
     "default_width": 200
+  },
+  "buffer_font_features": {
+    "calt": false,
+    "liga": false
   },
   "terminal": {
     "option_as_meta": true,
@@ -39,7 +44,7 @@
     "TypeScript": {
       "format_on_save": {
         "external": {
-          "command": "node_modules/.bin/prettier",
+          "command": "prettier",
           "arguments": ["--stdin-filepath", "{buffer_path}"]
         }
       },
@@ -50,6 +55,12 @@
       }
     },
     "TSX": {
+      "format_on_save": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
       "formatter": {
         "code_actions": {
           "source.fixAll.eslint": true
@@ -59,7 +70,7 @@
     "JavaScript": {
       "format_on_save": {
         "external": {
-          "command": "node_modules/.bin/prettier",
+          "command": "prettier",
           "arguments": ["--stdin-filepath", "{buffer_path}"]
         }
       },
