@@ -33,6 +33,7 @@ export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
 export PATH=$PATH:$HOME/Library/Python/3.11/bin
+export PATH=$PATH:$HOME/go/bin
 
 eval "$(rbenv init - zsh)"
 
