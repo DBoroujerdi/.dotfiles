@@ -2,7 +2,7 @@ export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
 
-plugins=(git fzf node nvm aws)
+plugins=(git fzf node nvm aws env)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -86,3 +86,20 @@ load-nvmrc() {
 
 add-zsh-hook chpwd load-nvmrc
 load-nvmrc
+
+
+# functions
+interval() {
+    local cmd="$1"
+    local interval=${2:-10}
+
+    while true; do
+        eval "$cmd"
+        echo ""
+        sleep "$interval"
+    done
+}
+
+autoload bashcompinit && bashcompinit
+source $(brew --prefix)/etc/bash_completion.d/az
+
