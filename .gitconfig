@@ -6,6 +6,13 @@
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 	ec = commit --allow-empty -m "Trigger Build"
 	ca = commit --amend
+        undo = reset --soft HEAD^
+        ds = diff --staged
+[init]
+        defaultBranch = main
+[push]
+        autoSetupRemote = true
+        default = current
 [github]
 	user = dboroujerdi
 [diff]
@@ -28,3 +35,10 @@
         path = ~/.gitconfig.local
 [core]
 	editor = nvim
+        pager = delta
+[credential]
+	helper = store
+	helper =
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[delta]
+        line-numbers = true
