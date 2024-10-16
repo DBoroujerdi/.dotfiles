@@ -7,3 +7,9 @@ GNU Stow
 ```
 brew install stow
 ```
+
+## Add a file
+
+`mv ~/.file ~/.dotfiles/`
+`cd ~/.dotfiles`
+`stow .`
