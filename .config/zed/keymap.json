@@ -1,5 +1,100 @@
 [
   {
+    "bindings": {
+      "ctrl-k": "menu::SelectPrev",
+      "ctrl-j": "menu::SelectNext"
+      // "ctrl-n": "workspace::ToggleRightDock"
+    }
+  },
+  // Normal mode only
+  {
+    "context": "vim_mode == normal",
+    "bindings": {
+      "space o p": "project_panel::OpenPermanent",
+
+      "space s v": "pane::SplitRight",
+      "space s h": "pane::SplitDown",
+      "g ]": "editor::GoToDiagnostic",
+      "g [": "editor::GoToPrevDiagnostic",
+      "g r": "editor::FindAllReferences",
+      "] d": ["workspace::SendKeystrokes", "] shift-d escape g ."],
+      "space c a": "editor::ToggleCodeActions",
+      "space c o": "outline::Toggle",
+
+      // pane navigation
+      "ctrl-h": ["workspace::ActivatePaneInDirection", "Left"],
+      "ctrl-l": ["workspace::ActivatePaneInDirection", "Right"],
+      "ctrl-k": ["workspace::ActivatePaneInDirection", "Up"],
+      "ctrl-j": ["workspace::ActivatePaneInDirection", "Down"],
+      "ctrl-a p": "pane::ActivatePrevItem",
+      "ctrl-a n": "pane::ActivateNextItem",
+      "ctrl-a x": "pane::CloseActiveItem",
+
+      // code actions
+      "space r n": "editor::Rename",
+
+      "enter": "editor::OpenExcerpts",
+
+      // code navigation
+      "ctrl-shift-d": "vim::ScrollDown",
+      "ctrl-shift-u": "vim::ScrollUp",
+      "ctrl-u": ["workspace::SendKeystrokes", "ctrl-shift-u z z"],
+      "ctrl-d": ["workspace::SendKeystrokes", "ctrl-shift-d z z"],
+
+      "space f f": "file_finder::Toggle",
+      "space f s": "pane::DeploySearch",
+
+      "space a s": "assistant::ToggleFocus",
+      "ctrl-a": "assistant::ToggleFocus",
+      "space a i": "assistant::InlineAssist",
+
+      "cmd-alt-k": "editor::AddSelectionAbove", // Insert cursor above
+      "cmd-alt-j": "editor::AddSelectionBelow" // Insert cursor below
+    }
+  },
+  // Visual mode
+  {
+    "context": "Editor && vim_mode == visual && !VimWaiting && !VimObject",
+    "bindings": {
+      "shift-j": "editor::MoveLineDown",
+      "shift-k": "editor::MoveLineUp",
+
+      "space a i": "assistant::InlineAssist",
+
+      "cmd-alt-k": "editor::AddSelectionAbove", // Insert cursor above
+      "cmd-alt-j": "editor::AddSelectionBelow" // Insert cursor below
+    }
+  },
+  {
+    "context": "ProjectPanel",
+    "bindings": {
+      "ctrl-h": "workspace::ToggleRightDock",
+
+      "tab": "project_panel::OpenPermanent"
+    }
+  },
+  {
+    "context": "Editor && VimControl && !VimWaiting && !menu",
+    "bindings": {
+      "ctrl-w z": "workspace::ToggleZoom",
+      "ctrl-w t": "terminal_panel::ToggleFocus",
+      "g ]": "editor::GoToDiagnostic",
+      "g [": "editor::GoToPrevDiagnostic",
+      "g r": "editor::FindAllReferences",
+      "shift-k": "editor::Hover",
+      "space l a": "editor::ToggleCodeActions",
+      "space l r": "editor::Rename",
+      "space l f": "editor::Format",
+      "space l l": "diagnostics::Deploy",
+      "g c c": "editor::ToggleComments",
+      "space f": "file_finder::Toggle",
+      "space o": "tab_switcher::Toggle",
+      "space e": "workspace::ToggleLeftDock",
+      "space p": "outline::Toggle",
+      "space v": "editor::GoToDefinitionSplit"
+    }
+  },
+  {
     "context": "Editor",
     "bindings": {
       "ctrl-l": "project_panel::ToggleFocus",
@@ -9,22 +104,32 @@
     }
   },
   {
-    "context": "Terminal",
-    "bindings": {
-      "ctrl-l": "project_panel::ToggleFocus",
-      "ctrl-k": "terminal_panel::ToggleFocus"
-    }
-  },
-  {
     "context": "ProjectPanel && not_editing",
     "bindings": {
       "k": "menu::SelectPrev",
       "j": "menu::SelectNext",
       "h": "project_panel::CollapseSelectedEntry",
       "l": "project_panel::ExpandSelectedEntry",
-      "o": "project_panel::Open",
-      "ctrl-h": "project_panel::ToggleFocus",
-      "ctrl-enter": "project_panel::Open"
+      "o": "project_panel::Open"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      // "ctrl-k": ["workspace::ActivatePaneInDirection", "Up"],
+      "ctrl-k": "terminal_panel::ToggleFocus"
     }
   }
+  // {
+  //   "context": "ProjectPanel && not_editing",
+  //   "bindings": {
+  //     "k": "menu::SelectPrev",
+  //     "j": "menu::SelectNext",
+  //     "h": "project_panel::CollapseSelectedEntry",
+  //     "l": "project_panel::ExpandSelectedEntry",
+  //     "o": "project_panel::Open",
+  //     "ctrl-h": "project_panel::ToggleFocus",
+  //     "ctrl-enter": "project_panel::Open"
+  //   }
+  // }
 ]
