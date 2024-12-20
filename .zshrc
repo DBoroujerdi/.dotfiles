@@ -131,3 +131,29 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 # pnpm end
+
+function export_op_secret() {
+    local secret_path="$1"
+    local env_var_name="$2"
+    
+    if ! value=$(op read "$secret_path"); then
+        echo "Failed to read $env_var_name from 1Password at path $secret_path"
+        return 1
+    fi
+    export "$env_var_name=$value"
+}
+
+if command -v op >/dev/null 2>&1; then
+    echo -n "1Password? (y/N): "
+    read answer
+    
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        if ! op whoami &>/dev/null; then
+            echo "Please sign in to 1Password"
+            eval $(op signin)
+        fi
+
+        export_op_secret "op://Private/anthropic/api_key" "ANTHROPIC_API_KEY"
+    fi
+fi
+
