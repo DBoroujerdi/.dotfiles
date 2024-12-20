@@ -354,21 +354,21 @@ require('lazy').setup({
     },
   },
 
-  {
-    'f-person/auto-dark-mode.nvim',
-    opts = {
-      update_interval = 1000,
-      set_dark_mode = function()
-        vim.api.nvim_set_option_value('background', 'dark', {})
-        vim.cmd 'colorscheme gruvbox'
-      end,
-      set_light_mode = function()
-        vim.api.nvim_set_option_value('background', 'light', {})
-        vim.cmd 'colorscheme gruvbox'
-      end,
-      fallback = 'light',
-    },
-  },
+  --  {
+  --    'f-person/auto-dark-mode.nvim',
+  --    opts = {
+  --      update_interval = 1000,
+  --      set_dark_mode = function()
+  --        vim.api.nvim_set_option_value('background', 'dark', {})
+  --        vim.cmd 'colorscheme gruvbox'
+  --      end,
+  --      set_light_mode = function()
+  --        vim.api.nvim_set_option_value('background', 'light', {})
+  --        vim.cmd 'colorscheme gruvbox'
+  --      end,
+  --      fallback = 'light',
+  --    },
+  --  },
 
   {
     'stevearc/oil.nvim',
@@ -526,6 +526,61 @@ require('lazy').setup({
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
     end,
+  },
+
+  -- AI
+  {
+    'yetone/avante.nvim',
+    event = 'VeryLazy',
+    lazy = false,
+    version = false, -- set this if you want to always pull the latest change
+    opts = {
+      -- add any opts here
+      provider = 'claude',
+      mappings = {
+        submit = {
+          normal = '<CR>',
+          insert = '<C-s>',
+        },
+      },
+    },
+    -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+    build = 'make',
+    -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
+    dependencies = {
+      'stevearc/dressing.nvim',
+      'nvim-lua/plenary.nvim',
+      'MunifTanjim/nui.nvim',
+      --- The below dependencies are optional,
+      'hrsh7th/nvim-cmp', -- autocompletion for avante commands and mentions
+      'nvim-tree/nvim-web-devicons', -- or echasnovski/mini.icons
+      'zbirenbaum/copilot.lua', -- for providers='copilot'
+      {
+        -- support for image pasting
+        'HakonHarnes/img-clip.nvim',
+        event = 'VeryLazy',
+        opts = {
+          -- recommended settings
+          default = {
+            embed_image_as_base64 = false,
+            prompt_for_file_name = false,
+            drag_and_drop = {
+              insert_mode = true,
+            },
+            -- required for Windows users
+            use_absolute_path = true,
+          },
+        },
+      },
+      {
+        -- Make sure to set this up properly if you have lazy=true
+        'MeanderingProgrammer/render-markdown.nvim',
+        opts = {
+          file_types = { 'markdown', 'Avante' },
+        },
+        ft = { 'markdown', 'Avante' },
+      },
+    },
   },
 
   -- LSP Plugins
