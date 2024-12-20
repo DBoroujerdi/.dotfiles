@@ -2,7 +2,7 @@ export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
 
-plugins=(git fzf node nvm aws env)
+plugins=(git fzf node nvm aws)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -34,6 +34,7 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
 export PATH=$PATH:$HOME/Library/Python/3.11/bin
 export PATH=$PATH:$HOME/go/bin
+export PATH=$PATH:$HOME/bin
 
 eval "$(rbenv init - zsh)"
 
@@ -100,6 +101,26 @@ interval() {
     done
 }
 
-autoload bashcompinit && bashcompinit
-source $(brew --prefix)/etc/bash_completion.d/az
+
+if [[ -d "$HOME/.zsh" ]]; then
+    if [[ $(uname) == "Darwin" ]]; then
+        [[ -f "$HOME/.zsh/macos.zsh" ]] && source "$HOME/.zsh/macos.zsh"
+    elif command -v apt > /dev/null; then
+        [[ -f "$HOME/.zsh/ubuntu.zsh" ]] && source "$HOME/.zsh/ubuntu.zsh"
+    else
+        echo 'Unknown OS!'
+    fi
+fi
+
+if [[ $(uname) == "Darwin" ]]; then
+    autoload bashcompinit && bashcompinit
+    source $(brew --prefix)/etc/bash_completion.d/az
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+
+    source "$ZSH_CUSTOM"/os/macos.zsh
+elif command -v apt > /dev/null; then
+    source "$ZSH_CUSTOM"/os/ubuntu.zsh
+else
+    echo 'Unknown OS!'
+fi
 
