@@ -90,6 +90,9 @@ P.S. You can delete this when you're done too. It's your config now! :)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+-- Set to true if you have a Nerd Font installed and selected in the terminal
+vim.g.have_nerd_font = false
+
 -- [[ Setting options ]]
 -- See `:help vim.opt`
 -- NOTE: You can change these options as you wish!
@@ -99,7 +102,7 @@ vim.g.maplocalleader = ' '
 vim.opt.number = true
 -- You can also add relative line numbers, for help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -108,9 +111,12 @@ vim.opt.mouse = 'a'
 vim.opt.showmode = false
 
 -- Sync clipboard between OS and Neovim.
+--  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
-vim.opt.clipboard = 'unnamedplus'
+vim.schedule(function()
+  vim.opt.clipboard = 'unnamedplus'
+end)
 
 -- Enable break indent
 vim.opt.breakindent = true
@@ -127,6 +133,9 @@ vim.opt.signcolumn = 'yes'
 
 -- Decrease update time
 vim.opt.updatetime = 250
+
+-- Decrease mapped sequence wait time
+-- Displays which-key popup sooner
 vim.opt.timeoutlen = 300
 
 -- Configure how new splits should be opened
@@ -150,13 +159,17 @@ vim.opt.scrolloff = 10
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
-
--- Set highlight on search, but clear on pressing <Esc> in normal mode
-vim.opt.hlsearch = true
-
+--
 local map = vim.keymap.set
 
-vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+-- Clear highlights on search when pressing <Esc> in normal mode
+--  See `:help hlsearch`
+map('n', '<Esc>', '<cmd>nohlsearch<CR>')
+
+-- Diagnostic keymaps
+map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+
+map('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
 map('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
@@ -211,9 +224,12 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
-if not vim.loop.fs_stat(lazypath) then
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
-  vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
+  local out = vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
+  if vim.v.shell_error ~= 0 then
+    error('Error cloning lazy.nvim:\n' .. out)
+  end
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
@@ -338,24 +354,6 @@ require('lazy').setup {
     },
   },
 
-  --  { -- Useful plugin to show you pending keybinds.
-  --    'folke/which-key.nvim',
-  --    event = 'VimEnter', -- Sets the loading event to 'VimEnter'
-  --    config = function() -- This is the function that runs, AFTER loading
-  --      require('which-key').setup()
-  --
-  --      -- Document existing key chains
-  --      require('which-key').register {
-  --        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-  --        ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-  --        ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-  --        ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-  --        ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
-  --        ['<leader>g'] = { name = '[G]it', _ = 'which_key_ignore' },
-  --      }
-  --    end,
-  --  },
-
   {
     'f-person/auto-dark-mode.nvim',
     opts = {
@@ -397,6 +395,24 @@ require('lazy').setup {
     branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
+      { -- If encountering errors, see telescope-fzf-native README for installation instructions
+        'nvim-telescope/telescope-fzf-native.nvim',
+
+        -- `build` is used to run some command when the plugin is installed/updated.
+        -- This is only run then, not every time Neovim starts up.
+        build = 'make',
+
+        -- `cond` is a condition used to determine whether this plugin should be
+        -- installed and loaded.
+        cond = function()
+          return vim.fn.executable 'make' == 1
+        end,
+      },
+      { 'nvim-telescope/telescope-ui-select.nvim' },
+
+      -- Useful for getting pretty icons, but requires a Nerd Font.
+      { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
+
       'debugloop/telescope-undo.nvim',
       { -- If encountering errors, see telescope-fzf-native README for install instructions
         'nvim-telescope/telescope-fzf-native.nvim',
@@ -486,7 +502,7 @@ require('lazy').setup {
       -- Undo
       vim.keymap.set('n', '<leader>u', '<cmd>Telescope undo<cr>')
 
-      -- Slightly advanced example of overriding default behavior and theme
+      -- Slightly a|vanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
         -- You can pass additional configuration to telescope to change theme, layout, etc.
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
@@ -511,6 +527,20 @@ require('lazy').setup {
     end,
   },
 
+  -- LSP Plugins
+  {
+    -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
+    -- used for completion, annotations and signatures of Neovim apis
+    'folke/lazydev.nvim',
+    ft = 'lua',
+    opts = {
+      library = {
+        -- Load luvit types when the `vim.uv` word is found
+        { path = 'luvit-meta/library', words = { 'vim%.uv' } },
+      },
+    },
+  },
+  { 'Bilal2453/luvit-meta', lazy = true },
   {
     -- Main LSP Configuration
     'neovim/nvim-lspconfig',
@@ -648,6 +678,16 @@ require('lazy').setup {
         end,
       })
 
+      -- Change diagnostic symbols in the sign column (gutter)
+      -- if vim.g.have_nerd_font then
+      --   local signs = { ERROR = '', WARN = '', INFO = '', HINT = '' }
+      --   local diagnostic_signs = {}
+      --   for type, icon in pairs(signs) do
+      --     diagnostic_signs[vim.diagnostic.severity[type]] = icon
+      --   end
+      --   vim.diagnostic.config { signs = { text = diagnostic_signs } }
+      -- end
+
       -- LSP servers and clients are able to communicate to each other what features they support.
       --  By default, Neovim doesn't support everything that is in the LSP specification.
       --  When you add nvim-cmp, luasnip, etc. Neovim now has *more* capabilities.
@@ -728,21 +768,43 @@ require('lazy').setup {
 
   { -- Autoformat
     'stevearc/conform.nvim',
+    event = { 'BufWritePre' },
+    cmd = { 'ConformInfo' },
+    keys = {
+      {
+        '<leader>f',
+        function()
+          require('conform').format { async = true, lsp_format = 'fallback' }
+        end,
+        mode = '',
+        desc = '[F]ormat buffer',
+      },
+    },
     opts = {
       notify_on_error = false,
-      format_on_save = {
-        timeout_ms = 500,
-        lsp_fallback = true,
-      },
+      format_on_save = function(bufnr)
+        -- Disable "format_on_save lsp_fallback" for languages that don't
+        -- have a well standardized coding style. You can add additional
+        -- languages here or re-enable it for the disabled ones.
+        local disable_filetypes = { c = true, cpp = true }
+        local lsp_format_opt
+        if disable_filetypes[vim.bo[bufnr].filetype] then
+          lsp_format_opt = 'never'
+        else
+          lsp_format_opt = 'fallback'
+        end
+        return {
+          timeout_ms = 500,
+          lsp_format = lsp_format_opt,
+        }
+      end,
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
-        -- You can use a sub-list to tell conform to run *until* a formatter
-        -- is found.
-        javascript = { { 'prettierd', 'prettier' } },
-
+        -- You can use 'stop_after_first' to run the first available formatter from the list
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
         go = { 'goimports', 'gofmt' },
       },
     },
