@@ -200,12 +200,23 @@ map('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 map('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 map('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+map('n', '<leader>wv', '<C-w>v') -- split window vertically
+map('n', '<leader>wh', '<C-w>s') -- split window horizontally
+map('n', '<leader>wx', ':close<CR>') -- close current split window
+
 -- Navigating Splits
 map('n', '<C-l>', '<C-w>l', { desc = 'Right split', noremap = true, silent = true })
 map('n', '<C-h>', '<C-w>h', { desc = 'Left split', noremap = true, silent = true })
 map('n', '<C-j>', '<C-w>j', { desc = 'Down split', noremap = true, silent = true })
 map('n', '<C-k>', '<C-w>k', { desc = 'Up split', noremap = true, silent = true })
 map('n', '<leader>o', ':only<cr>', { noremap = true, silent = true })
+
+-- move highlighted line(s) up or down
+map('v', 'J', ":m '>+1<CR>gv=gv")
+map('v', 'K', ":m '<-2<CR>gv=gv")
+
+-- rename current word
+map('n', '<leader>rw', [[:%s/\<<C-r><C-w>\>//gI<Left><Left><Left>]])
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -428,6 +439,12 @@ require('lazy').setup({
           return vim.fn.executable 'make' == 1
         end,
       },
+      {
+        'smartpde/telescope-recent-files',
+        config = function()
+          vim.api.nvim_set_keymap('n', '<leader>r', [[<cmd>lua require('telescope').extensions.recent_files.pick()<CR>]], { noremap = true, silent = true })
+        end,
+      },
       { 'nvim-telescope/telescope-ui-select.nvim' },
 
       -- Useful for getting pretty icons, but requires special font.
@@ -525,6 +542,46 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+    end,
+  },
+
+  {
+    'nvim-tree/nvim-tree.lua',
+    lazy = false,
+    keys = {
+      { '<C-n>', ':NvimTreeToggle<CR>' },
+    },
+    config = function()
+      local api = require 'nvim-tree.api'
+
+      require('nvim-tree').setup {
+        hijack_cursor = true,
+        disable_netrw = true,
+        view = {
+          adaptive_size = true,
+          float = {
+            enable = true,
+          },
+        },
+        renderer = {
+          indent_markers = { enable = true },
+        },
+        actions = {
+          open_file = {
+            window_picker = {
+              enable = false,
+            },
+          },
+        },
+        on_attach = function(bufnr)
+          api.config.mappings.default_on_attach(bufnr)
+
+          local opts = { buffer = bufnr, silent = true, nowait = true }
+
+          map('n', 's', api.node.open.vertical, opts)
+          map('n', 'h', api.node.open.horizontal, opts)
+        end,
+      }
     end,
   },
 
@@ -679,7 +736,7 @@ require('lazy').setup({
 
           -- Fuzzy find all the symbols in your current workspace.
           --  Similar to document symbols, except searches over your entire project.
-          map('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
+          -- map('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
 
           -- Rename the variable under your cursor.
           --  Most Language Servers support renaming across files, etc.
@@ -860,7 +917,9 @@ require('lazy').setup({
         -- python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
+        yaml = { 'prettier' },
         javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
         go = { 'goimports', 'gofmt' },
       },
     },
