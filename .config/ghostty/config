@@ -1,0 +1,4 @@
+theme = NvimDark
+
+macos-option-as-alt = true
+
