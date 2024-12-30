@@ -9,14 +9,19 @@
 {
   "assistant": {
     "default_model": {
-      "provider": "zed.dev",
+      "provider": "anthropic",
       "model": "claude-3-5-sonnet-latest"
     },
     "version": "2"
   },
+  "language_models": {
+    "ollama": {
+      "api_url": "http://devbox:11434"
+    }
+  },
   "theme": {
     "mode": "system",
-    "light": "Github Light",
+    "light": "Github Dark",
     "dark": "Github Dark"
   },
   "auto_update": true,
