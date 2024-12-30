@@ -18,7 +18,6 @@ SAVEHIST=10000000
 
 setopt hist_ignore_all_dups
 
-
 # allow navigate by word in intellij
 if [[ -z $__INTELLIJ_COMMAND_HISTFILE__ ]]; then
     bindkey "\e\eb" backward-word
@@ -36,8 +35,6 @@ export PATH=$PATH:$HOME/Library/Python/3.11/bin
 export PATH=$PATH:$HOME/go/bin
 export PATH=$PATH:$HOME/bin
 
-eval "$(rbenv init - zsh)"
-
 alias gs="git status"
 alias v=nvim
 alias vim=nvim
@@ -46,7 +43,6 @@ alias gs="git status"
 alias mkdirp="mkdir -p"
 alias vime="vim -u NONE -U NONE -N"
 
-eval "$(jump shell)"
 
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
@@ -62,8 +58,6 @@ export GPG_TTY=$(tty)
 export PATH=$HOME/.sst/bin:$PATH
 export PATH="/opt/homebrew/opt/openssl@1.1/bin:$PATH"
 
-
-# auto run `nvm use` when dir contains .nvmrc
 autoload -U add-zsh-hook
 
 load-nvmrc() {
@@ -88,7 +82,6 @@ load-nvmrc() {
 add-zsh-hook chpwd load-nvmrc
 load-nvmrc
 
-
 # functions
 interval() {
     local cmd="$1"
@@ -101,7 +94,6 @@ interval() {
     done
 }
 
-
 if [[ -d "$HOME/.zsh" ]]; then
     if [[ $(uname) == "Darwin" ]]; then
         [[ -f "$HOME/.zsh/macos.zsh" ]] && source "$HOME/.zsh/macos.zsh"
@@ -112,20 +104,8 @@ if [[ -d "$HOME/.zsh" ]]; then
     fi
 fi
 
-if [[ $(uname) == "Darwin" ]]; then
-    autoload bashcompinit && bashcompinit
-    source $(brew --prefix)/etc/bash_completion.d/az
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-
-    source "$ZSH_CUSTOM"/os/macos.zsh
-elif command -v apt > /dev/null; then
-    source "$ZSH_CUSTOM"/os/ubuntu.zsh
-else
-    echo 'Unknown OS!'
-fi
-
 # pnpm
-export PNPM_HOME="/home/dan/.local/share/pnpm"
+export PNPM_HOME="$HOME/.local/share/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;
@@ -135,7 +115,7 @@ esac
 function export_op_secret() {
     local secret_path="$1"
     local env_var_name="$2"
-    
+
     if ! value=$(op read "$secret_path"); then
         echo "Failed to read $env_var_name from 1Password at path $secret_path"
         return 1
@@ -146,7 +126,7 @@ function export_op_secret() {
 if command -v op >/dev/null 2>&1; then
     echo -n "1Password? (y/N): "
     read answer
-    
+
     if [[ "$answer" =~ ^[Yy]$ ]]; then
         if ! op whoami &>/dev/null; then
             echo "Please sign in to 1Password"
@@ -157,3 +137,7 @@ if command -v op >/dev/null 2>&1; then
     fi
 fi
 
+. "$HOME/.deno/env"
+
+command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
+command -v jump >/dev/null 2>&1 && eval "$(jump shell)"
