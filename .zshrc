@@ -123,6 +123,11 @@ function export_op_secret() {
     export "$env_var_name=$value"
 }
 
+load_secrets() {
+    export_op_secret "op://Private/anthropic/api_key" "ANTHROPIC_API_KEY"
+    export_op_secret "op://Private/openai/api_key" "OPENAI_API_KEY"
+}
+
 if command -v op >/dev/null 2>&1; then
     echo -n "1Password? (y/N): "
     read answer
@@ -133,7 +138,7 @@ if command -v op >/dev/null 2>&1; then
             eval $(op signin)
         fi
 
-        export_op_secret "op://Private/anthropic/api_key" "ANTHROPIC_API_KEY"
+        load_secrets
     fi
 fi
 
