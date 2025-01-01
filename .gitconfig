@@ -7,7 +7,17 @@
 	ec = commit --allow-empty -m "Trigger Build"
 	ca = commit --amend
         undo = reset --soft HEAD^
-        ds = diff --staged
+	ds = diff --staged
+[user]
+	email = 274674+DBoroujerdi@users.noreply.github.com
+[gpg]
+	format = ssh
+[commit]
+	gpgsign = true
+[includeIf "gitdir:/Users/"]
+	path = ~/.gitconfig-macos
+[includeIf "gitdir:/home/"]
+	path = ~/.gitconfig-linux
 [init]
         defaultBranch = main
 [push]
@@ -24,21 +34,13 @@
 [mergetool]
 	prompt = false
 	keepBackup = false
-[commit]
-	gpgsign = true
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
-[include]
-        path = ~/.gitconfig.local
 [core]
 	editor = nvim
         pager = delta
-[credential]
-	helper = store
-	helper =
-	helper = /usr/local/share/gcm-core/git-credential-manager
 [delta]
         line-numbers = true
