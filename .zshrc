@@ -36,6 +36,7 @@ export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
 export PATH=$PATH:$HOME/Library/Python/3.11/bin
 export PATH=$PATH:$HOME/go/bin
 export PATH=$PATH:$HOME/bin
+export PATH=$PATH:$HOME/.scripts
 
 alias gs="git status"
 alias v=nvim
@@ -130,19 +131,19 @@ load_secrets() {
     export_op_secret "op://Private/openai/api_key" "OPENAI_API_KEY"
 }
 
-if command -v op >/dev/null 2>&1; then
-    echo -n "1Password? (y/N): "
-    read answer
-
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-        if ! op whoami &>/dev/null; then
-            echo "Please sign in to 1Password"
-            eval $(op signin)
-        fi
-
-        load_secrets
-    fi
-fi
+#if command -v op >/dev/null 2>&1; then
+#    echo -n "1Password? (y/N): "
+#    read answer
+#
+#    if [[ "$answer" =~ ^[Yy]$ ]]; then
+#        if ! op whoami &>/dev/null; then
+#            echo "Please sign in to 1Password"
+#            eval $(op signin)
+#        fi
+#
+#        load_secrets
+#    fi
+#fi
 
 . "$HOME/.deno/env"
 
