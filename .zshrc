@@ -10,10 +10,6 @@ source $ZSH/oh-my-zsh.sh
 
 RPROMPT='%F{blue}%m%f'  
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
 HISTFILE=~/.zsh_history
 HISTSIZE=10000000
 SAVEHIST=10000000
@@ -46,7 +42,6 @@ alias gs="git status"
 alias mkdirp="mkdir -p"
 alias vime="vim -u NONE -U NONE -N"
 
-
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
@@ -55,7 +50,6 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 export GPG_TTY=$(tty)
-
 
 # sst
 export PATH=$HOME/.sst/bin:$PATH
@@ -149,3 +143,9 @@ load_secrets() {
 
 command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
 command -v jump >/dev/null 2>&1 && eval "$(jump shell)"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+. "$HOME/.local/bin/env"

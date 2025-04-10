@@ -1,9 +1,12 @@
+// run "debug: open key control view" to see context and
+// keystroke matches in real time
 [
   {
     "bindings": {
-      "ctrl-k": "menu::SelectPrev",
-      "ctrl-j": "menu::SelectNext"
-      // "ctrl-n": "workspace::ToggleRightDock"
+      "ctrl-k": "menu::SelectPrevious",
+      "ctrl-j": "menu::SelectNext",
+      "ctrl-w g": "git_panel::ToggleFocus",
+      "ctrl-w c": "collab_panel::ToggleFocus"
     }
   },
   // Normal mode only
@@ -11,24 +14,27 @@
     "context": "vim_mode == normal",
     "bindings": {
       "space o p": "project_panel::OpenPermanent",
-
+      "space p p": "project_panel::ToggleFocus",
       "space s v": "pane::SplitRight",
       "space s h": "pane::SplitDown",
       "g ]": "editor::GoToDiagnostic",
-      "g [": "editor::GoToPrevDiagnostic",
+      "g [": "editor::GoToPreviousDiagnostic",
       "g r": "editor::FindAllReferences",
       "] d": ["workspace::SendKeystrokes", "] shift-d escape g ."],
       "space c a": "editor::ToggleCodeActions",
       "space c o": "outline::Toggle",
 
       // pane navigation
-      "ctrl-h": ["workspace::ActivatePaneInDirection", "Left"],
-      "ctrl-l": ["workspace::ActivatePaneInDirection", "Right"],
-      "ctrl-k": ["workspace::ActivatePaneInDirection", "Up"],
-      "ctrl-j": ["workspace::ActivatePaneInDirection", "Down"],
-      "ctrl-a p": "pane::ActivatePrevItem",
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-j": "workspace::ActivatePaneDown",
+      "ctrl-a p": "pane::ActivatePreviousItem",
       "ctrl-a n": "pane::ActivateNextItem",
       "ctrl-a x": "pane::CloseActiveItem",
+
+      "space g g": "git::Diff",
+      "space g G": "git_panel::ToggleFocus",
 
       // code actions
       "space r n": "editor::Rename",
@@ -68,8 +74,6 @@
   {
     "context": "ProjectPanel",
     "bindings": {
-      "ctrl-h": "workspace::ToggleRightDock",
-
       "tab": "project_panel::OpenPermanent"
     }
   },
@@ -79,9 +83,8 @@
       "ctrl-w z": "workspace::ToggleZoom",
       "ctrl-w t": "terminal_panel::ToggleFocus",
       "g ]": "editor::GoToDiagnostic",
-      "g [": "editor::GoToPrevDiagnostic",
+      "g [": "editor::GoToPreviousDiagnostic",
       "g r": "editor::FindAllReferences",
-      "shift-k": "editor::Hover",
       "space l a": "editor::ToggleCodeActions",
       "space l r": "editor::Rename",
       "space l f": "editor::Format",
@@ -90,15 +93,137 @@
       "space f": "file_finder::Toggle",
       "space o": "tab_switcher::Toggle",
       "space e": "workspace::ToggleLeftDock",
-      "space p": "outline::Toggle",
+      // "space p": "outline::Toggle",
+      // "ctrl-n": "workspace::ToggleRightDock"
       "space v": "editor::GoToDefinitionSplit"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal && !VimWaiting && !menu",
+    "bindings": {
+      "space s w": "pane::DeploySearch",
+      "space m p": "markdown::OpenPreview",
+      "space m P": "markdown::OpenPreviewToTheSide",
+      "space f p": "projects::OpenRecent",
+
+      // +LSP
+      "space c a": "editor::ToggleCodeActions",
+      "space .": "editor::ToggleCodeActions",
+      "space c r": "editor::Rename",
+      "g d": "editor::GoToDefinition",
+      "g D": "editor::GoToDefinitionSplit",
+      "g i": "editor::GoToImplementation",
+      "g I": "editor::GoToImplementationSplit",
+      "g t": "editor::GoToTypeDefinition",
+      "g T": "editor::GoToTypeDefinitionSplit",
+      "g r": "editor::FindAllReferences",
+      "] d": "editor::GoToDiagnostic",
+      "] e": "editor::GoToDiagnostic",
+      "[ e": "editor::GoToPreviousDiagnostic",
+      "space space": "file_finder::Toggle",
+
+      // Symbol search
+      "s s": "outline::Toggle",
+      "s S": "project_symbols::Toggle",
+
+      // +Git
+      // Git prev/next hunk
+      "] h": "editor::GoToHunk",
+      "[ h": "editor::GoToPreviousHunk",
+
+      "space /": "pane::DeploySearch",
+
+      "space x x": "diagnostics::Deploy",
+      "space e": "pane::RevealInProjectPanel"
+    }
+  },
+  {
+    "context": "GitPanel",
+    "bindings": {
+      "ctrl-l": "git_panel::Close"
+      // "m": "git_panel::OpenMenu",
+      // "e": "git_panel::FocusEditor",
+      // "c": "git_panel::FocusChanges"
+    }
+  },
+  {
+    "context": "CollabPanel",
+    "bindings": {
+      "ctrl l": "collab_panel::ToggleFocus"
+    }
+  },
+  // Empty pane, set of keybindings that are available when there is no active editor
+  {
+    "context": "EmptyPane || SharedScreen",
+    "bindings": {
+      // Open file finder
+      "space space": "file_finder::Toggle",
+      // Open recent project
+      "space f p": "projects::OpenRecent"
+    }
+  },
+  {
+    "context": "AssistantPanel",
+    "bindings": {
+      "q q": "workspace::ToggleRightDock"
+    }
+  },
+  // Comment code
+  {
+    "context": "Editor && vim_mode == visual && !VimWaiting && !menu",
+    "bindings": {
+      // visual, visual line & visual block modes
+      "g c": "editor::ToggleComments"
+    }
+  },
+  // Better escape
+  {
+    "context": "Editor && vim_mode == insert && !menu",
+    "bindings": {
+      "j j": "vim::NormalBefore", // remap jj in insert mode to escape
+      "j k": "vim::NormalBefore" // remap jk in insert mode to escape
+    }
+  },
+  {
+    "context": "Editor && vim_operator == c",
+    "bindings": {
+      "c": "vim::CurrentLine",
+      "r": "editor::Rename", // zed specific
+      "a": "editor::ToggleCodeActions"
+    }
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "a": "project_panel::NewFile",
+      "A": "project_panel::NewDirectory",
+      "r": "project_panel::Rename",
+      "d": "project_panel::Delete",
+      "x": "project_panel::Cut",
+      "c": "project_panel::Copy",
+      "p": "project_panel::Paste",
+      // Close project panel as project file panel on the right
+      "q": "workspace::ToggleRightDock",
+      "space e": "workspace::ToggleRightDock",
+      // Navigate between panel
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-j": "workspace::ActivatePaneDown"
+    }
+  },
+  {
+    "context": "Editor && (vim_mode == normal || vim_mode == visual) && !VimWaiting && !menu",
+    "bindings": {
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-j": "workspace::ActivatePaneDown"
     }
   },
   {
     "context": "Editor",
     "bindings": {
-      "ctrl-l": "project_panel::ToggleFocus",
-      "ctrl-j": "terminal_panel::ToggleFocus",
       "cmd-[": "pane::GoBack",
       "cmd-]": "pane::GoForward"
     }
@@ -106,7 +231,7 @@
   {
     "context": "ProjectPanel && not_editing",
     "bindings": {
-      "k": "menu::SelectPrev",
+      "k": "menu::SelectPrevious",
       "j": "menu::SelectNext",
       "h": "project_panel::CollapseSelectedEntry",
       "l": "project_panel::ExpandSelectedEntry",
