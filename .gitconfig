@@ -10,6 +10,21 @@
 	ds = diff --staged
 [user]
 	email = 274674+DBoroujerdi@users.noreply.github.com
+	name = Daniel Boroujerdi
+[core]
+	editor = nvim
+	pager = delta
+	compression = 9
+	whitespace = error
+	preloadindex = true
+[url "git@github.com:dboroujerdi/"]
+	insteadOf = "db:"
+[url "git@github.com:"]
+	insteadOf = "gh:"
+[status]
+	branch = true
+	showStash = true
+	showUntrackedFiles = all
 [gpg]
 	format = ssh
 [commit]
@@ -22,11 +37,21 @@
         defaultBranch = main
 [push]
         autoSetupRemote = true
-        default = current
+	default = current
+	followTags = true
+[pull]
+	default = currect
+	rebase = true
+[rebase]
+	autoStash = true
+	missingCommitsCheck = warn
 [github]
 	user = dboroujerdi
 [diff]
 	cmd = nvim -f -c \"DiffviewOpen\"
+	context = 3
+	renames = copies
+	interHunContext = 10
 [merge]
 	tool = nvim
 [mergetool "nvim"]
@@ -39,8 +64,14 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
-[core]
-	editor = nvim
-        pager = delta
+[advice]
+	addEmptyPathSpec = false
+	pushNonFastFoward = false
+	statusHints = false
 [delta]
         line-numbers = true
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://dev.azure.com"]
+	useHttpPath = true
