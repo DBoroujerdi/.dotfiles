@@ -1,7 +1,6 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
-
 plugins=(git fzf node nvm aws)
 
 source $ZSH/oh-my-zsh.sh
@@ -35,10 +34,14 @@ export PATH=$PATH:$HOME/bin
 export PATH=$PATH:$HOME/.scripts
 
 alias gs="git status"
+alias gl='git log --graph --all --pretty=format:"%C(magenta)%h %C(white) %an  %ar%C(blue)  %D%n%s%n"'
+alias gn="git checkout -b"
+alias gs="git status"
+alias gu="gitu"
+
 alias v=nvim
 alias vim=nvim
 alias zc="nvim ~/.zshrc"
-alias gs="git status"
 alias mkdirp="mkdir -p"
 alias vime="vim -u NONE -U NONE -N"
 
@@ -57,27 +60,6 @@ export PATH="/opt/homebrew/opt/openssl@1.1/bin:$PATH"
 
 autoload -U add-zsh-hook
 
-load-nvmrc() {
-  local nvmrc_path
-  nvmrc_path="$(nvm_find_nvmrc)"
-
-  if [ -n "$nvmrc_path" ]; then
-    local nvmrc_node_version
-    nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
-
-    if [ "$nvmrc_node_version" = "N/A" ]; then
-      nvm install
-    elif [ "$nvmrc_node_version" != "$(nvm version)" ]; then
-      nvm use
-    fi
-  elif [ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" ] && [ "$(nvm version)" != "$(nvm version default)" ]; then
-    echo "Reverting to nvm default version"
-    nvm use default
-  fi
-}
-
-add-zsh-hook chpwd load-nvmrc
-load-nvmrc
 
 # functions
 interval() {
@@ -121,8 +103,9 @@ function export_op_secret() {
 }
 
 load_secrets() {
-    export_op_secret "op://Private/anthropic/api_key" "ANTHROPIC_API_KEY"
-    export_op_secret "op://Private/openai/api_key" "OPENAI_API_KEY"
+    # export_op_secret "op://Private/anthropic/api_key" "ANTHROPIC_API_KEY"
+    # export_op_secret "op://Private/openai/api_key" "OPENAI_API_KEY"
+    export_op_secret "op://Private/openrouter/api_key" "OPENROUTER_API_KEY"
 }
 
 #if command -v op >/dev/null 2>&1; then
@@ -139,13 +122,58 @@ load_secrets() {
 #    fi
 #fi
 
-. "$HOME/.deno/env"
+if [[ -d "$HOME/.deno/env" ]]; then
+    . "$HOME/.deno/env"
+fi
 
 command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
 command -v jump >/dev/null 2>&1 && eval "$(jump shell)"
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+
+if [[ -d "$HOME/.local/bin/env" ]]; then
+    . "$HOME/.local/bin/env"
+fi
+
+
+# place this after nvm initialization!
+autoload -U add-zsh-hook
+
+load-nvmrc() {
+  local nvmrc_path
+  nvmrc_path="$(nvm_find_nvmrc)"
+
+  if [ -n "$nvmrc_path" ]; then
+    local nvmrc_node_version
+    nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+
+    if [ "$nvmrc_node_version" = "N/A" ]; then
+      nvm install
+    elif [ "$nvmrc_node_version" != "$(nvm version)" ]; then
+      nvm use
+    fi
+  elif [ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" ] && [ "$(nvm version)" != "$(nvm version default)" ]; then
+    echo "Reverting to nvm default version"
+    nvm use default
+  fi
+}
+
+add-zsh-hook chpwd load-nvmrc
+load-nvmrc
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-. "$HOME/.local/bin/env"
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
+export PATH="$HOME/.rd/bin:$PATH"
+### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
+
+. "$HOME/.cargo/env"
+
+
+for f in ~/.zsh/functions/*.zsh; do
+  source "$f"
+done
