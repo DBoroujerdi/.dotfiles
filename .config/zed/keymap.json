@@ -147,6 +147,12 @@
     }
   },
   {
+    "context": "AgentPanel",
+    "bindings": {
+      "ctrl-l": "agent::FocusLeft"
+    }
+  },
+  {
     "context": "CollabPanel",
     "bindings": {
       "ctrl l": "collab_panel::ToggleFocus"
