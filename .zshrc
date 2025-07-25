@@ -44,6 +44,7 @@ alias vim=nvim
 alias zc="nvim ~/.zshrc"
 alias mkdirp="mkdir -p"
 alias vime="vim -u NONE -U NONE -N"
+alias uuid="uuidgen | tr -d '\n' | tr '[:upper:]' '[:lower:]'  | pbcopy && pbpaste && echo"
 
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
