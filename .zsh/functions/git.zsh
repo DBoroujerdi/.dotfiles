@@ -5,6 +5,7 @@ worktree(){
     echo "Usage: worktree <command>"
     echo "Commands:"
     echo "  new <worktree_name> - Create a new worktree"
+    echo "  open - Open an existing worktree using fzf"
     return 0
   fi
 
@@ -39,6 +40,50 @@ worktree(){
       # Create the worktree for the new branch
       git worktree add "$worktree_path" "$branch_name"
       cursor "$worktree_path"
+      ;;
+    open)
+      # Check if fzf is available
+      if ! command -v fzf > /dev/null 2>&1; then
+        echo "fzf is required but not installed. Please install fzf first."
+        return 1
+      fi
+      
+      local worktrees_base="$HOME/projects/worktrees"
+      
+      # Check if worktrees directory exists
+      if [[ ! -d "$worktrees_base" ]]; then
+        echo "No worktrees found at $worktrees_base"
+        return 1
+      fi
+      
+      # Step 1: Pick the project using fzf
+      local selected_project=$(find "$worktrees_base" -maxdepth 1 -type d -name "*" | grep -v "^$worktrees_base$" | sed "s|$worktrees_base/||" | fzf --prompt="Select project: ")
+      
+      if [[ -z "$selected_project" ]]; then
+        echo "No project selected"
+        return 1
+      fi
+      
+      local project_path="$worktrees_base/$selected_project"
+      
+      # Step 2: Pick the worktree within the selected project
+      local selected_worktree=$(find "$project_path" -maxdepth 1 -type d -name "*" | grep -v "^$project_path$" | sed "s|$project_path/||" | fzf --prompt="Select worktree: ")
+      
+      if [[ -z "$selected_worktree" ]]; then
+        echo "No worktree selected"
+        return 1
+      fi
+      
+      local worktree_path="$project_path/$selected_worktree"
+      
+      # Step 3: Open in cursor
+      if [[ -d "$worktree_path" ]]; then
+        echo "Opening $worktree_path in Cursor..."
+        cursor "$worktree_path"
+      else
+        echo "Worktree path does not exist: $worktree_path"
+        return 1
+      fi
       ;;
     "")
       echo "Please provide a subcommand (e.g., 'new')."
