@@ -213,40 +213,6 @@
 
 (setq epg-gpg-program "gpg")
 
-;; Treesitter
-
-;; language grammars
-(setq treesit-language-source-alist
-   '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-     (cmake "https://github.com/uyha/tree-sitter-cmake")
-     (css "https://github.com/tree-sitter/tree-sitter-css")
-     (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-     (go "https://github.com/tree-sitter/tree-sitter-go")
-     (html "https://github.com/tree-sitter/tree-sitter-html")
-     (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-     (json "https://github.com/tree-sitter/tree-sitter-json")
-     (make "https://github.com/alemuller/tree-sitter-make")
-     (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-     (python "https://github.com/tree-sitter/tree-sitter-python")
-     (toml "https://github.com/tree-sitter/tree-sitter-toml")
-     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-     (yaml "https://github.com/ikatyang/tree-sitter-yaml")
-     (hcl "https://github.com/mitchellh/tree-sitter-hcl.git")
-     (tsx "https://github.com/tree-sitter/tree-sitter-typescript.git" "master" "typescript/src")))
-
-;; remap major modes to treesitter
-
-(setq major-mode-remap-alist
- '((yaml-mode . yaml-ts-mode)
-   (bash-mode . bash-ts-mode)
-   (js2-mode . js-ts-mode)
-   (typescript-mode . typescript-ts-mode)
-   (json-mode . json-ts-mode)
-   (css-mode . css-ts-mode)
-   (python-mode . python-ts-mode)
-   (terraform-mode . hcl-ts-mode)))
-
 ;;
 ;; Packages
 ;;
@@ -277,6 +243,14 @@
     "U" 'undo-tree-visualize)
   (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d./.cache"))))
 
+(use-package treesit-auto
+  :ensure t
+  :custom
+  (treesit-auto-install 'prompt)
+  :config
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (global-treesit-auto-mode))
+
 (use-package evil-collection
   :after evil
   :diminish evil-collection-unimpaired-mode
@@ -295,7 +269,12 @@
   (general-mmap "C-h" 'windmove-left)
   (general-mmap "C-l" 'windmove-right)
   (general-mmap "C-j" 'windmove-down)
-  (general-mmap "C-k" 'windmove-up))
+  (general-mmap "C-k" 'windmove-up)
+
+  ;; Buffer splitting keybindings
+  (general-leader-def 'normal 'override
+    "|" 'split-window-horizontally
+    "-" 'split-window-vertically))
 
 (use-package smartparens
   :ensure t
@@ -319,6 +298,8 @@
 (use-package projectile
   :ensure t
   :diminish projectile-mode
+  :init
+  (setq projectile-project-search-path '("~/projects/"))
   :config
   (progn
     (projectile-mode +1)
@@ -326,6 +307,7 @@
       "p p" 'projectile-commander
       "p f" 'projectile-find-file
       "p g" 'projectile-grep
+      "p r" 'projectile-ripgrep
       "p v" 'projectile-run-vterm)))
 
 (use-package which-key
@@ -337,18 +319,6 @@
   :init
   (which-key-mode))
 
-(use-package copilot
-  :quelpa (copilot :fetcher github
-                   :repo "zerolfx/copilot.el"
-                   :branch "main"
-                   :files ("dist" "*.el"))
-  :hook (prog-mode . copilot-mode)
-  :config (progn
-            (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-            (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
-            (define-key copilot-completion-map (kbd "M-]") 'copilot-next-completion)
-            (define-key copilot-completion-map (kbd "M-[") 'copilot-previous-completion)))
-
 (use-package prog-mode
   :config (progn
             (add-hook 'prog-mode-hook (lambda ()
@@ -356,19 +326,6 @@
      (setq-local grep-find-ignored-directories
                  (cons "node_modules" (default-value 'grep-find-ignored-directories)))
      ))))
-
-(use-package treemacs
-  :ensure t
-  :config
-  (setq treemacs-is-never-other-window t)
-
-  (general-leader-def 'normal 'override
-    "t t" 'treemacs
-    "t s" 'treemacs-select-window))
-
-(use-package treemacs-projectile
-  :ensure t
-  :after treemacs projectile)
 
 (require 'project)
 
@@ -380,6 +337,22 @@
                    :files ("*.el" "extensions/*.el"))
   :init (vertico-mode)
   )
+
+(use-package consult
+  :ensure t
+  :config
+  (general-leader-def 'normal 'override
+    "b b" 'consult-buffer
+    "f r" 'consult-recent-file
+    "s c" 'consult-grep
+    "s C" 'consult-git-grep
+    "s i" 'consult-imenu
+    "s I" 'consult-imenu-multi
+    "s l" 'consult-line
+    "s L" 'consult-line-multi
+    "s o" 'consult-outline
+    "s m" 'consult-mark
+    "s M" 'consult-global-mark))
 
 (use-package magit
   :ensure t
@@ -403,17 +376,67 @@
   (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
         fzf/executable "fzf"
         fzf/git-grep-args "-i --line-number %s"
-        ;; command used for `fzf-grep-*` functions
-        ;; example usage for ripgrep:
-        ;; fzf/grep-command "rg --no-heading -nH"
-        fzf/grep-command "grep -nrH"
+        ;; Use ripgrep for fzf-grep
+        fzf/grep-command "rg --no-heading -nH"
         ;; If nil, the fzf buffer will appear at the top of the window
         fzf/position-bottom t
         fzf/window-height 15)
 
   (general-leader-def 'normal 'override
     "s p" 'fzf-projectile
-    "s g" 'fzf-git-grep))
+    "s g" 'fzf-git-grep
+    "s f" 'fzf-grep))
+
+;; Grep configuration
+(use-package grep
+  :config
+  (progn
+    ;; Use ripgrep if available
+    (when (executable-find "rg")
+      (setq grep-program "rg")
+      (setq grep-find-use-xargs nil)
+      (setq grep-use-null-device nil))
+
+    ;; Custom grep functions
+    (defun my/grep-project ()
+      "Grep in current project using projectile."
+      (interactive)
+      (if (projectile-project-p)
+          (call-interactively 'projectile-grep)
+        (call-interactively 'grep)))
+
+    (defun my/ripgrep-project ()
+      "Ripgrep in current project using projectile."
+      (interactive)
+      (if (projectile-project-p)
+          (call-interactively 'projectile-ripgrep)
+        (call-interactively 'rgrep)))
+
+    ;; Grep keybindings
+    (general-leader-def 'normal 'override
+      "/"   'my/ripgrep-project
+      "s s" 'my/grep-project
+      "s r" 'my/ripgrep-project
+      "s d" 'grep-find
+      "s l" 'lgrep
+      "s R" 'rgrep)))
+
+(use-package ag
+  :ensure t
+  :config
+  (setq ag-highlight-search t)
+  (setq ag-reuse-buffers t)
+  (setq ag-reuse-window t)
+  (general-leader-def 'normal 'override
+    "s a" 'ag-project
+    "s A" 'ag))
+
+;; ripgrep support
+(use-package ripgrep
+  :ensure t
+  :config
+  (general-leader-def 'normal 'override
+    "s R" 'ripgrep-regexp))
 
 (use-package terraform-mode
   :ensure t
@@ -435,20 +458,68 @@
                                          (print "vterm hook 2")
                                          (setq-local display-line-numbers-mode nil)))))
 
+(use-package claude-code-ide
+  :ensure t
+  :quelpa (claude-code-ide :fetcher github
+                           :repo "manzaltu/claude-code-ide.el")
+  :after vterm
+  :config
+  (progn
+    ;; Use vterm as the terminal backend
+    (setq claude-code-ide-terminal-backend 'vterm)
+    ;; Configure window placement
+    (setq claude-code-ide-window-side 'right)
+    (setq claude-code-ide-window-width 100)
+    ;; Enable Emacs MCP tools integration
+    (claude-code-ide-emacs-tools-setup))
+  :general
+  (general-leader-def 'normal 'override
+    "a c" 'claude-code-ide-menu
+    "a i" 'claude-code-ide
+    "a p" 'claude-code-ide-send-prompt
+    "a s" 'claude-code-ide-stop))
+
 ;;
 ;; LSP
 ;;
 
-(use-package eglot)
+(use-package eglot
+  :ensure t
+  :config
+  ;; Configure eglot settings
+  (setq eglot-autoshutdown t)
+  (setq eglot-sync-connect 1)
+  (setq eglot-connect-timeout 10)
+  (setq eglot-events-buffer-size 0)
+  (setq eglot-ignored-server-capabilities '(:documentHighlightProvider))
+
+  ;; Add server programs
+  (add-to-list 'eglot-server-programs
+               '((typescript-mode typescript-ts-mode tsx-ts-mode) . ("typescript-language-server" "--stdio")))
+
+  ;; Keybindings for LSP actions
+  (general-leader-def 'normal 'override
+    "l a" 'eglot-code-actions
+    "l r" 'eglot-rename
+    "l f" 'eglot-format
+    "l d" 'xref-find-definitions
+    "l R" 'xref-find-references
+    "l i" 'eglot-find-implementation
+    "l t" 'eglot-find-typeDefinition
+    "l s" 'eglot-reconnect
+    "l S" 'eglot-shutdown
+    "l h" 'eldoc))
 
 (use-package typescript-mode
   :ensure t
-  :after eglot
-  :init
-  (setq eglot-autoshutdown t)
+  :mode (("\\.ts\\'" . typescript-mode)
+         ("\\.tsx\\'" . tsx-ts-mode))
+  :hook ((typescript-mode . eglot-ensure)
+         (typescript-ts-mode . eglot-ensure)
+         (tsx-ts-mode . eglot-ensure))
   :config
-  (add-to-list 'eglot-server-programs
-               '((typescript-mode) "typescript-language-server" "--stdio")))
+  ;; Set indentation
+  (setq typescript-indent-level 2))
 
 (use-package company
   :ensure t
@@ -460,10 +531,33 @@
   :ensure t)
 
 (use-package prettier-js
-  :after typescript-mode
   :ensure t
-  :hook (typescript-mode . prettier-js-mode)
-  :hook (json-ts-mode . prettier-js-mode))
+  :hook ((js-mode . prettier-js-mode)
+         (js-ts-mode . prettier-js-mode)
+         (js2-mode . prettier-js-mode)
+         (typescript-mode . prettier-js-mode)
+         (typescript-ts-mode . prettier-js-mode)
+         (tsx-ts-mode . prettier-js-mode)
+         (json-mode . prettier-js-mode)
+         (json-ts-mode . prettier-js-mode)
+         (css-mode . prettier-js-mode)
+         (css-ts-mode . prettier-js-mode)
+         (scss-mode . prettier-js-mode)
+         (html-mode . prettier-js-mode)
+         (web-mode . prettier-js-mode)
+         (yaml-mode . prettier-js-mode)
+         (yaml-ts-mode . prettier-js-mode)
+         (markdown-mode . prettier-js-mode)
+         (graphql-mode . prettier-js-mode))
+  :config
+  ;; Use local prettier if available
+  (setq prettier-pre-warm 'none)
+  (setq prettier-js-use-modules-bin t)
+
+  ;; Prettier keybindings
+  (general-leader-def 'normal 'override
+    "c f" 'prettier-prettify
+    "c F" 'prettier-prettify-region))
 
 (use-package diminish
   :ensure t)
