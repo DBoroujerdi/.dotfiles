@@ -7,7 +7,7 @@ source $ZSH/oh-my-zsh.sh
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-RPROMPT='%F{blue}%m%f'  
+RPROMPT='%F{blue}%m%f'
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000000
@@ -178,3 +178,6 @@ export PATH="$HOME/.rd/bin:$PATH"
 for f in ~/.zsh/functions/*.zsh; do
   source "$f"
 done
+
+# opencode
+export PATH=$HOME/.opencode/bin:$PATH
