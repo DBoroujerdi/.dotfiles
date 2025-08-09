@@ -46,6 +46,20 @@ alias mkdirp="mkdir -p"
 alias vime="vim -u NONE -U NONE -N"
 alias uuid="uuidgen | tr -d '\n' | tr '[:upper:]' '[:lower:]'  | pbcopy && pbpaste && echo"
 
+# Quick edit with emacsclient
+alias e='emacsclient -n'
+alias ec='emacsclient -c -n'
+alias et='emacsclient -t'
+
+# Start/stop daemon
+alias emacs-start='emacs --daemon'
+alias emacs-stop='emacsclient -e "(kill-emacs)"'
+alias emacs-restart='emacs-stop && emacs-start'
+
+# Use emacsclient as default editor
+export EDITOR='emacsclient -t'
+export VISUAL='emacsclient -c -a emacs'
+
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
