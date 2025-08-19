@@ -47,8 +47,8 @@ alias vime="vim -u NONE -U NONE -N"
 alias uuid="uuidgen | tr -d '\n' | tr '[:upper:]' '[:lower:]'  | pbcopy && pbpaste && echo"
 
 # Quick edit with emacsclient
-alias e='emacsclient -n'
-alias ec='emacsclient -c -n'
+alias e='emacsclient -nw'
+alias ec='emacsclient -c -nw'
 alias et='emacsclient -t'
 
 # Start/stop daemon

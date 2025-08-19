@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if ! emacsclient -a false --eval nil --quiet >/dev/null 2>&1; then
+    echo "Error: Emacs not running." >&2
+    exit 1
+fi
+
+exec emacsclient -nw -c --eval "(progn (magit-status) (delete-other-windows))"

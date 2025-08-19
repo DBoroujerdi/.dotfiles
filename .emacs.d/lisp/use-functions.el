@@ -54,5 +54,4 @@
       (insert (current-kill 1 t)))
     (diff old new "-u" t)))
 
-(provide 'init-functions)
 ;;; init-functions.el ends here

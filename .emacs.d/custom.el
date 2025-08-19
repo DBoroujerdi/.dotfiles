@@ -99,15 +99,19 @@
      (tramp-connection-local-default-system-profile
       (path-separator . ":") (null-device . "/dev/null"))))
  '(custom-safe-themes
-   '("7e068da4ba88162324d9773ec066d93c447c76e9f4ae711ddd0c5d3863489c52"
+   '("4594d6b9753691142f02e67b8eb0fda7d12f6cc9f1299a49b819312d6addad1d"
+     "0325a6b5eea7e5febae709dab35ec8648908af12cf2d2b569bedc8da0a3a81c1"
+     "fd22a3aac273624858a4184079b7134fb4e97104d1627cb2b488821be765ff17"
+     "7e068da4ba88162324d9773ec066d93c447c76e9f4ae711ddd0c5d3863489c52"
      "467dc6fdebcf92f4d3e2a2016145ba15841987c71fbe675dcfe34ac47ffb9195"
      default))
  '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
  '(package-selected-packages
    '(ag all-the-icons claude-code-ide company consult diminish
         doom-themes evil-collection exec-path-from-shell fzf general
-        magit-todos prettier-js quelpa-use-package ripgrep smartparens
-        spotlight terraform-mode tree-sitter-langs treemacs-projectile
+        magit-todos markdown-mode prettier-js quelpa-use-package
+        rainbow-delimiters ripgrep smartparens spotlight
+        terraform-mode tree-sitter-langs treemacs-projectile
         treesit-auto typescript-mode undo-tree use-package
         vertico-prescient vterm wgrep yaml-mode)))
 (custom-set-faces
