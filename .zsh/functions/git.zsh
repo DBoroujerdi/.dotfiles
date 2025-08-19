@@ -6,6 +6,7 @@ worktree(){
     echo "Commands:"
     echo "  new <worktree_name> - Create a new worktree"
     echo "  open - Open an existing worktree using fzf"
+    echo "  delete - Delete a worktree directory and prune references"
     echo "  branch - Create a worktree from an existing branch using fzf"
     return 0
   fi
@@ -151,6 +152,110 @@ worktree(){
         echo "Failed to create worktree for branch '$available_branches'"
         return 1
       fi
+      ;;
+    delete)
+      # Check if fzf is available
+      if ! command -v fzf > /dev/null 2>&1; then
+        echo "fzf is required but not installed. Please install fzf first."
+        return 1
+      fi
+
+      local worktrees_base="$HOME/projects/worktrees"
+
+      # Check if worktrees directory exists
+      if [[ ! -d "$worktrees_base" ]]; then
+        echo "No worktrees found at $worktrees_base"
+        return 1
+      fi
+
+      # Step 1: Pick the project using fzf
+      local selected_project=$(find "$worktrees_base" -maxdepth 1 -type d -name "*" | grep -v "^$worktrees_base$" | sed "s|$worktrees_base/||" | fzf --prompt="Select project: ")
+
+      if [[ -z "$selected_project" ]]; then
+        echo "No project selected"
+        return 1
+      fi
+
+      local project_path="$worktrees_base/$selected_project"
+
+      # Step 2: Pick the worktree within the selected project
+      local selected_worktree=$(find "$project_path" -maxdepth 1 -type d -name "*" | grep -v "^$project_path$" | sed "s|$project_path/||" | fzf --prompt="Select worktree to delete: ")
+
+      if [[ -z "$selected_worktree" ]]; then
+        echo "No worktree selected"
+        return 1
+      fi
+
+      local worktree_path="$project_path/$selected_worktree"
+
+      if [[ ! -d "$worktree_path" ]]; then
+        echo "Worktree path does not exist: $worktree_path"
+        return 1
+      fi
+
+      # Determine the main repo's .git directory from the worktree's .git file
+      local gitfile="$worktree_path/.git"
+      if [[ ! -e "$gitfile" ]]; then
+        echo "Not a git worktree (missing $gitfile). Aborting."
+        return 1
+      fi
+
+      local gitdir_path
+      if [[ -f "$gitfile" ]]; then
+        gitdir_path=$(sed -n 's/^gitdir: //p' "$gitfile")
+      else
+        # In some cases, .git may be a directory; handle gracefully
+        gitdir_path="$gitfile"
+      fi
+
+      if [[ -z "$gitdir_path" ]]; then
+        echo "Failed to resolve gitdir from $gitfile. Aborting."
+        return 1
+      fi
+
+      # Compute the main repo .git directory: typically <repo>/.git, while worktrees are under <repo>/.git/worktrees/<name>
+      local main_git_dir
+      if [[ -d "$gitdir_path" ]]; then
+        # If gitdir_path points to a directory under .../.git/worktrees/<name>, go up two levels
+        main_git_dir=$(dirname "$(dirname "$gitdir_path")")
+      else
+        # If it's a relative path, resolve against worktree path
+        local resolved_gitdir
+        if [[ "$gitdir_path" = /* ]]; then
+          resolved_gitdir="$gitdir_path"
+        else
+          resolved_gitdir="$worktree_path/$gitdir_path"
+        fi
+        main_git_dir=$(dirname "$(dirname "$resolved_gitdir")")
+      fi
+
+      if [[ ! -d "$main_git_dir" ]]; then
+        echo "Could not locate main repo .git directory at $main_git_dir. Aborting."
+        return 1
+      fi
+
+      echo "About to delete worktree directory: $worktree_path"
+      read "_confirm?Type 'yes' to confirm: "
+      if [[ "$_confirm" != "yes" ]]; then
+        echo "Aborted."
+        return 1
+      fi
+
+      # Delete the worktree directory
+      rm -rf "$worktree_path"
+      if [[ $? -ne 0 ]]; then
+        echo "Failed to delete directory $worktree_path"
+        return 1
+      fi
+
+      # Prune stale worktree references using the main repo's git dir
+      GIT_DIR="$main_git_dir" git worktree prune
+      if [[ $? -ne 0 ]]; then
+        echo "Warning: git worktree prune failed for repo at $main_git_dir"
+        return 1
+      fi
+
+      echo "Deleted and pruned worktree: $selected_project/$selected_worktree"
       ;;
     "")
       echo "Please provide a subcommand (e.g., 'new')."
