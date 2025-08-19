@@ -36,11 +36,11 @@
 [init]
         defaultBranch = main
 [push]
-        autoSetupRemote = true
+	autoSetupRemote = true
 	default = current
 	followTags = true
 [pull]
-	default = currect
+	default = current
 	rebase = true
 [rebase]
 	autoStash = true
@@ -71,7 +71,6 @@
 [delta]
         line-numbers = true
 [credential]
-	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager
+	helper = /usr/local/bin/git-credential-manager
 [credential "https://dev.azure.com"]
 	useHttpPath = true
