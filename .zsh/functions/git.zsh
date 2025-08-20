@@ -6,6 +6,7 @@ worktree(){
     echo "Commands:"
     echo "  new <worktree_name> - Create a new worktree"
     echo "  open - Open an existing worktree using fzf"
+    echo "  list - List on-disk worktrees for the current repo"
     echo "  delete - Delete a worktree directory and prune references"
     echo "  branch - Create a worktree from an existing branch using fzf"
     return 0
@@ -40,6 +41,24 @@ worktree(){
   }
 
   case "$cmd" in
+    list)
+      # List on-disk worktrees for the current repo
+      if [[ ! -d "$worktrees_dir" ]]; then
+        echo "No worktrees directory found at $worktrees_dir"
+        return 0
+      fi
+
+      local listed_worktrees
+      listed_worktrees=$(find "$worktrees_dir" -maxdepth 1 -mindepth 1 -type d -print | sed 's|.*/||' | sort)
+
+      if [[ -z "$listed_worktrees" ]]; then
+        echo "No worktrees found for $repo_name at $worktrees_dir"
+        return 0
+      fi
+
+      echo "Worktrees for $repo_name (in $worktrees_dir):"
+      echo "$listed_worktrees"
+      ;;
     new)
       local worktree_name="$1"
       if [[ -z $worktree_name ]]; then
@@ -160,102 +179,78 @@ worktree(){
         return 1
       fi
 
-      local worktrees_base="$HOME/projects/worktrees"
-
-      # Check if worktrees directory exists
-      if [[ ! -d "$worktrees_base" ]]; then
-        echo "No worktrees found at $worktrees_base"
+      # Get all worktrees for the current repo using git worktree list
+      local worktree_info=$(git worktree list --porcelain)
+      if [[ -z "$worktree_info" ]]; then
+        echo "No worktrees found for this repository"
         return 1
       fi
 
-      # Step 1: Pick the project using fzf
-      local selected_project=$(find "$worktrees_base" -maxdepth 1 -type d -name "*" | grep -v "^$worktrees_base$" | sed "s|$worktrees_base/||" | fzf --prompt="Select project: ")
+      # Parse worktree list and create selection menu
+      local worktree_paths=()
+      local worktree_branches=()
+      local worktree_names=()
+      
+      while IFS= read -r line; do
+        if [[ "$line" =~ ^worktree[[:space:]](.*) ]]; then
+          worktree_paths+=("${match[1]}")
+        elif [[ "$line" =~ ^branch[[:space:]](.*) ]]; then
+          worktree_branches+=("${match[1]}")
+        fi
+      done <<< "$worktree_info"
 
-      if [[ -z "$selected_project" ]]; then
-        echo "No project selected"
-        return 1
-      fi
+      # Create display names for selection
+      local -a display_names
+      for i in {1..${#worktree_paths[@]}}; do
+        local path="${worktree_paths[$i]}"
+        local branch="${worktree_branches[$i]}"
+        local name=$(basename "$path")
+        display_names+=("$name ($branch)")
+      done
 
-      local project_path="$worktrees_base/$selected_project"
-
-      # Step 2: Pick the worktree within the selected project
-      local selected_worktree=$(find "$project_path" -maxdepth 1 -type d -name "*" | grep -v "^$project_path$" | sed "s|$project_path/||" | fzf --prompt="Select worktree to delete: ")
-
-      if [[ -z "$selected_worktree" ]]; then
+      # Use fzf to select worktree
+      local selected=$(printf '%s\n' "${display_names[@]}" | fzf --prompt="Select worktree to delete: ")
+      if [[ -z "$selected" ]]; then
         echo "No worktree selected"
         return 1
       fi
 
-      local worktree_path="$project_path/$selected_worktree"
-
-      if [[ ! -d "$worktree_path" ]]; then
-        echo "Worktree path does not exist: $worktree_path"
-        return 1
-      fi
-
-      # Determine the main repo's .git directory from the worktree's .git file
-      local gitfile="$worktree_path/.git"
-      if [[ ! -e "$gitfile" ]]; then
-        echo "Not a git worktree (missing $gitfile). Aborting."
-        return 1
-      fi
-
-      local gitdir_path
-      if [[ -f "$gitfile" ]]; then
-        gitdir_path=$(sed -n 's/^gitdir: //p' "$gitfile")
-      else
-        # In some cases, .git may be a directory; handle gracefully
-        gitdir_path="$gitfile"
-      fi
-
-      if [[ -z "$gitdir_path" ]]; then
-        echo "Failed to resolve gitdir from $gitfile. Aborting."
-        return 1
-      fi
-
-      # Compute the main repo .git directory: typically <repo>/.git, while worktrees are under <repo>/.git/worktrees/<name>
-      local main_git_dir
-      if [[ -d "$gitdir_path" ]]; then
-        # If gitdir_path points to a directory under .../.git/worktrees/<name>, go up two levels
-        main_git_dir=$(dirname "$(dirname "$gitdir_path")")
-      else
-        # If it's a relative path, resolve against worktree path
-        local resolved_gitdir
-        if [[ "$gitdir_path" = /* ]]; then
-          resolved_gitdir="$gitdir_path"
-        else
-          resolved_gitdir="$worktree_path/$gitdir_path"
+      # Find the corresponding worktree path
+      local selected_index
+      for i in {1..${#display_names[@]}}; do
+        if [[ "${display_names[$i]}" == "$selected" ]]; then
+          selected_index=$i
+          break
         fi
-        main_git_dir=$(dirname "$(dirname "$resolved_gitdir")")
-      fi
+      done
 
-      if [[ ! -d "$main_git_dir" ]]; then
-        echo "Could not locate main repo .git directory at $main_git_dir. Aborting."
+      local worktree_path="${worktree_paths[$selected_index]}"
+      local branch_name="${worktree_branches[$selected_index]}"
+      local worktree_name=$(basename "$worktree_path")
+
+      # Don't allow deletion of main worktree
+      local main_repo=$(git rev-parse --show-toplevel)
+      if [[ "$worktree_path" == "$main_repo" ]]; then
+        echo "Cannot delete the main repository worktree"
         return 1
       fi
 
-      echo "About to delete worktree directory: $worktree_path"
+      echo "About to delete worktree: $worktree_name ($branch_name)"
+      echo "Path: $worktree_path"
       read "_confirm?Type 'yes' to confirm: "
       if [[ "$_confirm" != "yes" ]]; then
         echo "Aborted."
         return 1
       fi
 
-      # Delete the worktree directory
-      rm -rf "$worktree_path"
+      # Remove the worktree
+      git worktree remove "$worktree_path" --force
       if [[ $? -ne 0 ]]; then
-        echo "Failed to delete directory $worktree_path"
+        echo "Failed to remove worktree: $worktree_path"
         return 1
       fi
 
-      # Prune stale worktree references using the main repo's git dir
-      GIT_DIR="$main_git_dir" git worktree prune
-      if [[ $? -ne 0 ]]; then
-        echo "Warning: git worktree prune failed for repo at $main_git_dir"
-        return 1
-      fi
-
-      echo "Deleted and pruned worktree: $selected_project/$selected_worktree"
+      echo "Successfully deleted worktree: $worktree_name"
       ;;
     "")
       echo "Please provide a subcommand (e.g., 'new')."
