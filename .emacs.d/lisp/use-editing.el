@@ -15,7 +15,9 @@
       (setq evil-undo-system 'undo-tree)
       (setq evil-want-keybinding nil))
   :config
-  (evil-mode 1))
+  (evil-mode 1)
+  (add-hook 'evil-insert-state-entry-hook (lambda () (send-string-to-terminal "\033[5 q")))
+  (add-hook 'evil-insert-state-exit-hook  (lambda () (send-string-to-terminal "\033[2 q"))))
 
 (use-package undo-tree
   :quelpa (undo-tree :fetcher gitlab :repo "tsc25/undo-tree")
