@@ -34,6 +34,9 @@ map('v', 'K', ":m '<-2<CR>gv=gv", { desc = 'Move highlighted line(s) up' })
 -- Word replacement
 map('n', '<leader>rw', [[:%s/\<<C-r><C-w>\>//gI<Left><Left><Left>]], { desc = 'Replace current word' })
 
+-- Project picker
+map('n', '<leader>pp', '<cmd>NeovimProjectDiscover<cr>', { desc = 'Open project picker' })
+
 -- TIP: Disable arrow keys in normal mode (uncomment if desired)
 -- map('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- map('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
