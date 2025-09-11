@@ -25,9 +25,28 @@ worktree(){
   local worktrees_dir="$HOME/projects/worktrees/$repo_name"
   mkdir -p "$worktrees_dir"
 
-  # Helper to open a path with the user's configured editor
+  # Helper to open a path with the user's configured editor and start tmux session
   _open_with_editor() {
     local target_path="$1"
+    local session_name=$(basename "$target_path")
+
+    # Start tmux session in the worktree directory
+    if command -v tmux > /dev/null 2>&1; then
+      # Check if session already exists
+      if tmux has-session -t "$session_name" 2>/dev/null; then
+        echo "Tmux session '$session_name' already exists. Switching to it..."
+        tmux switch-client -t "$session_name" 2>/dev/null || tmux attach-session -t "$session_name"
+      else
+        echo "Creating new tmux session '$session_name' in $target_path..."
+        tmux new-session -d -s "$session_name" -c "$target_path"
+        tmux switch-client -t "$session_name"
+        echo "Tmux session '$session_name' created. Use 'tmux attach -t $session_name' to attach."
+      fi
+    else
+      echo "tmux is not installed. Skipping tmux session creation."
+    fi
+
+    # Open with editor
     if [[ -n "$EDITOR" ]]; then
       # Support EDITOR values with flags (e.g., "code -n")
       local -a editor_cmd
@@ -83,35 +102,35 @@ worktree(){
         echo "fzf is required but not installed. Please install fzf first."
         return 1
       fi
-      
+
       local worktrees_base="$HOME/projects/worktrees"
-      
+
       # Check if worktrees directory exists
       if [[ ! -d "$worktrees_base" ]]; then
         echo "No worktrees found at $worktrees_base"
         return 1
       fi
-      
+
       # Step 1: Pick the project using fzf
       local selected_project=$(find "$worktrees_base" -maxdepth 1 -type d -name "*" | grep -v "^$worktrees_base$" | sed "s|$worktrees_base/||" | fzf --prompt="Select project: ")
-      
+
       if [[ -z "$selected_project" ]]; then
         echo "No project selected"
         return 1
       fi
-      
+
       local project_path="$worktrees_base/$selected_project"
-      
+
       # Step 2: Pick the worktree within the selected project
       local selected_worktree=$(find "$project_path" -maxdepth 1 -type d -name "*" | grep -v "^$project_path$" | sed "s|$project_path/||" | fzf --prompt="Select worktree: ")
-      
+
       if [[ -z "$selected_worktree" ]]; then
         echo "No worktree selected"
         return 1
       fi
-      
+
       local worktree_path="$project_path/$selected_worktree"
-      
+
       # Step 3: Open in editor
       if [[ -d "$worktree_path" ]]; then
         _open_with_editor "$worktree_path"
@@ -126,19 +145,19 @@ worktree(){
         echo "fzf is required but not installed. Please install fzf first."
         return 1
       fi
-      
+
       # Get all branches (local and remote)
       local all_branches=$(git branch -a --format='%(refname:short)' | sed 's|origin/||' | sort -u)
-      
+
       # Filter out HEAD and current branch
       local current_branch=$(git branch --show-current)
       local available_branches=$(echo "$all_branches" | grep -v "HEAD" | grep -v "^$current_branch$" | fzf --prompt="Select branch: ")
-      
+
       if [[ -z "$available_branches" ]]; then
         echo "No branch selected"
         return 1
       fi
-      
+
       # Check if branch exists locally, if not fetch it
       if ! git show-ref --verify --quiet refs/heads/"$available_branches"; then
         echo "Branch '$available_branches' not found locally. Fetching from remote..."
@@ -147,11 +166,11 @@ worktree(){
           return 1
         }
       fi
-      
+
       # Create worktree name (use branch name, but handle special characters)
       local worktree_name=$(echo "$available_branches" | sed 's/[^a-zA-Z0-9._-]/-/g')
       local worktree_path="$worktrees_dir/$worktree_name"
-      
+
       # Check if worktree already exists
       if [[ -d "$worktree_path" ]]; then
         echo "Worktree '$worktree_name' already exists at $worktree_path"
@@ -159,11 +178,11 @@ worktree(){
         _open_with_editor "$worktree_path"
         return 0
       fi
-      
+
       # Create the worktree for the selected branch
       echo "Creating worktree for branch '$available_branches'..."
       git worktree add "$worktree_path" "$available_branches"
-      
+
       if [[ $? -eq 0 ]]; then
         echo "Worktree created successfully at $worktree_path"
         _open_with_editor "$worktree_path"
@@ -190,7 +209,7 @@ worktree(){
       local worktree_paths=()
       local worktree_branches=()
       local worktree_names=()
-      
+
       while IFS= read -r line; do
         if [[ "$line" =~ ^worktree[[:space:]](.*) ]]; then
           worktree_paths+=("${match[1]}")
