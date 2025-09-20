@@ -6,3 +6,4 @@ shell-integration = zsh
 
 link-url = true
 
+keybind = shift+enter=text:\x1b\r
