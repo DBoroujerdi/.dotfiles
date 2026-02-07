@@ -61,8 +61,7 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;;(setq-default
-;; package-native-compile t
-;; use-package-always-defer t
-;; use-package-always-ensure t
-;; use-package-enable-imenu-support t)
+(setq-default
+ package-native-compile t
+ use-package-always-ensure t
+ use-package-enable-imenu-support t)

@@ -109,6 +109,9 @@
 ;; Auto-refresh dired on file change
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 
+;; Run garbage collection when idle for 30+ seconds
+(run-with-idle-timer 30 t #'garbage-collect)
+
 (setq display-line-numbers-type 'relative)
 
 (global-goto-address-mode)
@@ -127,6 +130,17 @@
 
 ;; don't use graphical dialogs
 (setq use-dialog-box nil)
+
+;; Disable expensive features in large files
+(add-hook 'find-file-hook
+          (lambda ()
+            (if (> (buffer-size) 100000)  ; Files >100KB
+                (progn
+                  (display-line-numbers-mode -1)
+                  (visual-line-mode -1)
+                  (goto-address-mode -1))
+              (display-line-numbers-mode t)
+              (global-goto-address-mode t))))
 
 ;; Enable clipboard integration - copy/paste between Emacs and system
 

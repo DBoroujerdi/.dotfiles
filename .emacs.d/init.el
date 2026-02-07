@@ -2,6 +2,12 @@
 ;;; Commentary:
 ;;; Code:
 
+;; Optimize garbage collection during startup
+(setq gc-cons-threshold (* 800 1024 1024))
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq gc-cons-threshold (* 100 1024 1024))))
+
 (message "Running as user %s .."
 	 ((lambda ()
 	    (getenv

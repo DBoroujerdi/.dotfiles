@@ -69,6 +69,8 @@
 ;; no default start up screen
 (setq inhibit-startup-screen t)
 
+(setq inhibit-splash-screen t)
+
 ;; no initial scratch text
 (setq initial-scratch-message nil)
 

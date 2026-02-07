@@ -27,7 +27,7 @@
 (setq initial-scratch-message nil)
 
 ;; buffer line spacing
-(setq-default line-spacing 5)
+(setq-default line-spacing 2)  ; Reduced for better performance
 
 ;; go full screen on start
 (add-to-list 'default-frame-alist '(fullscreen . maximized))

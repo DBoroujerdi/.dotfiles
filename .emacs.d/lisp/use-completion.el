@@ -43,8 +43,10 @@
 (use-package company
   :ensure t
   :diminish company-mode
+  :hook (prog-mode . company-mode)
   :config
-  (add-hook 'after-init-hook 'global-company-mode))
+  (setq company-idle-delay 0.2)
+  (setq company-minimum-prefix-length 2))
 
 (provide 'use-completion)
 ;;; use-completion.el ends here

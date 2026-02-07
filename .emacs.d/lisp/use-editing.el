@@ -10,14 +10,15 @@
 
 (use-package evil
   :ensure t
+  :demand t
   :init
    (progn
       (setq evil-undo-system 'undo-tree)
       (setq evil-want-keybinding nil))
   :config
   (evil-mode 1)
-  (add-hook 'evil-insert-state-entry-hook (lambda () (send-string-to-terminal "\033[5 q")))
-  (add-hook 'evil-insert-state-exit-hook  (lambda () (send-string-to-terminal "\033[2 q"))))
+  (add-hook 'evil-insert-state-entry-hook (lambda () (setq cursor-type 'bar)))
+  (add-hook 'evil-insert-state-exit-hook  (lambda () (setq cursor-type 'box))))
 
 (use-package undo-tree
   :quelpa (undo-tree :fetcher gitlab :repo "tsc25/undo-tree")
@@ -42,15 +43,22 @@
   (general-create-definer general-leader-def
     :prefix leader-key)
 
-  (general-mmap "C-h" 'windmove-left)
-  (general-mmap "C-l" 'windmove-right)
-  (general-mmap "C-j" 'windmove-down)
-  (general-mmap "C-k" 'windmove-up)
+  (general-mmap "M-h" 'windmove-left)
+  (general-mmap "M-l" 'windmove-right)
+  (general-mmap "M-j" 'windmove-down)
+  (general-mmap "M-k" 'windmove-up)
 
   ;; Buffer splitting keybindings
   (general-leader-def 'normal 'override
     "|" 'split-window-horizontally
-    "-" 'split-window-vertically))
+    "-" 'split-window-vertically)
+
+  ;; Code navigation
+  (general-leader-def 'normal 'override
+    "g d" 'xref-find-definitions
+    "g r" 'xref-find-references
+    "g b" 'xref-go-back
+    "g f" 'xref-go-forward))
 
 (use-package smartparens
   :diminish smartparens-mode
