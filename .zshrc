@@ -13,6 +13,8 @@ HISTFILE=~/.zsh_history
 HISTSIZE=10000000
 SAVEHIST=10000000
 
+export XDG_CONFIG_HOME="$HOME/.config"
+
 setopt hist_ignore_all_dups
 
 # allow navigate by word in intellij
@@ -50,14 +52,15 @@ alias uuid="uuidgen | tr -d '\n' | tr '[:upper:]' '[:lower:]'  | pbcopy && pbpas
 alias e='emacsclient -nw'
 alias ec='emacsclient -c -nw'
 alias et='emacsclient -t'
+alias eg='emacsclient --create-frame . >/dev/null 2>&1 &'
+
 
 # Start/stop daemon
-alias emacs-start='emacs --daemon'
+alias emacs-start='open -a Emacs --args --daemon'
 alias emacs-stop='emacsclient -e "(kill-emacs)"'
 alias emacs-restart='emacs-stop && emacs-start'
 
-# Use emacsclient as default editor
-export EDITOR='cursor'
+export EDITOR='nvim'
 export VISUAL='emacsclient -c -a emacs'
 
 # bun completions
