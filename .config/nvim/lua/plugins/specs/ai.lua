@@ -2,49 +2,67 @@
 -- AI-powered coding assistance tools
 
 return {
-  -- Avante for AI coding assistance
   {
-    'yetone/avante.nvim',
-    event = 'VeryLazy',
-    lazy = false,
-    version = false,
+    'folke/sidekick.nvim',
     opts = {
-      provider = 'claude',
-      mappings = {
-        submit = {
-          normal = '<CR>',
-          insert = '<C-s>',
+      -- add any options here
+      cli = {
+        mux = {
+          backend = 'tmux',
+          enabled = true,
         },
       },
     },
-    build = 'make',
-    dependencies = {
-      'stevearc/dressing.nvim',
-      'nvim-lua/plenary.nvim',
-      'MunifTanjim/nui.nvim',
-      'hrsh7th/nvim-cmp',
-      'nvim-tree/nvim-web-devicons',
-      'zbirenbaum/copilot.lua',
+    -- stylua: ignore
+    keys = {
       {
-        'HakonHarnes/img-clip.nvim',
-        event = 'VeryLazy',
-        opts = {
-          default = {
-            embed_image_as_base64 = false,
-            prompt_for_file_name = false,
-            drag_and_drop = {
-              insert_mode = true,
-            },
-            use_absolute_path = true,
-          },
-        },
+        "<tab>",
+        function()
+          -- if there is a next edit, jump to it, otherwise apply it if any
+          if not require("sidekick").nes_jump_or_apply() then
+            return "<Tab>" -- fallback to normal tab
+          end
+        end,
+        expr = true,
+        desc = "Goto/Apply Next Edit Suggestion",
       },
       {
-        'MeanderingProgrammer/render-markdown.nvim',
-        opts = {
-          file_types = { 'markdown', 'Avante' },
-        },
-        ft = { 'markdown', 'Avante' },
+        "<leader>aa",
+        function() require("sidekick.cli").toggle() end,
+        mode = { "n", "v" },
+        desc = "Sidekick Toggle CLI",
+      },
+      {
+        "<leader>as",
+        function() require("sidekick.cli").select() end,
+        -- Or to select only installed tools:
+        -- require("sidekick.cli").select({ filter = { installed = true } })
+        desc = "Sidekick Select CLI",
+      },
+      {
+        "<leader>as",
+        function() require("sidekick.cli").send({ selection = true }) end,
+        mode = { "v" },
+        desc = "Sidekick Send Visual Selection",
+      },
+      {
+        "<leader>ap",
+        function() require("sidekick.cli").prompt() end,
+        mode = { "n", "v" },
+        desc = "Sidekick Select Prompt",
+      },
+      {
+        "<c-.>",
+        function() require("sidekick.cli").focus() end,
+        mode = { "n", "x", "i", "t" },
+        desc = "Sidekick Switch Focus",
+      },
+      -- Example of a keybinding to open Claude directly
+      {
+        "<leader>ac",
+        function() require("sidekick.cli").toggle({ name = "claude", focus = true }) end,
+        desc = "Sidekick Claude Toggle",
+        mode = { "n", "v" },
       },
     },
   },

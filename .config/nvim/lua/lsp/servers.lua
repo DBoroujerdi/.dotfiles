@@ -35,6 +35,9 @@ local servers = {
 local ensure_installed = vim.tbl_keys(servers or {})
 vim.list_extend(ensure_installed, {
   'stylua', -- Used to format Lua code
+  'eslint_d', -- Used to lint JavaScript/TypeScript code
+  'prettierd', -- Used to format JavaScript/TypeScript and other files
+  'prettier', -- Fallback formatter if prettierd is not available
 })
 
 local ok_mason_tool, mason_tool = pcall(require, 'mason-tool-installer')

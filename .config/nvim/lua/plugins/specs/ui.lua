@@ -18,6 +18,7 @@ return {
     'folke/which-key.nvim',
     event = 'VimEnter',
     opts = {
+      delay = 500, -- Delay in milliseconds before showing which-key popup
       icons = {
         mappings = vim.g.have_nerd_font,
         keys = vim.g.have_nerd_font and {} or {

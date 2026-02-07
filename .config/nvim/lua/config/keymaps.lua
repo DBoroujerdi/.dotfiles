@@ -37,6 +37,43 @@ map('n', '<leader>rw', [[:%s/\<<C-r><C-w>\>//gI<Left><Left><Left>]], { desc = 'R
 -- Project picker
 map('n', '<leader>pp', '<cmd>NeovimProjectDiscover<cr>', { desc = 'Open project picker' })
 
+map('n', '<leader>pf', '<cmd>Telescope find_files<cr>', { desc = 'Find files' })
+
+map('n', '<leader>P', '<cmd>Telescope commands<cr>', { desc = 'Command palette (VSCode-like)' })
+
+-- Cmd+[ and Cmd+] for navigation
+map('n', '<leader>[', '<C-o>', { desc = 'Go back' })
+map('n', '<leader>]', '<C-i>', { desc = 'Go forward' })
+
+-- Terminal toggle function
+local terminal_buf = nil
+local terminal_win = nil
+
+local function toggle_terminal()
+  if terminal_win and vim.api.nvim_win_is_valid(terminal_win) then
+    -- Terminal is open, close it
+    vim.api.nvim_win_close(terminal_win, false)
+    terminal_win = nil
+  else
+    -- Open terminal at the bottom
+    vim.cmd 'botright 15split'
+    if terminal_buf and vim.api.nvim_buf_is_valid(terminal_buf) then
+      -- Reuse existing terminal buffer
+      vim.api.nvim_set_current_buf(terminal_buf)
+    else
+      -- Create new terminal
+      vim.cmd 'terminal'
+      terminal_buf = vim.api.nvim_get_current_buf()
+      -- Start in insert mode
+      vim.cmd 'startinsert'
+    end
+    terminal_win = vim.api.nvim_get_current_win()
+  end
+end
+
+map('n', '<leader>j', toggle_terminal, { desc = 'Toggle terminal' })
+map('t', '<leader>j', toggle_terminal, { desc = 'Toggle terminal' })
+
 -- TIP: Disable arrow keys in normal mode (uncomment if desired)
 -- map('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- map('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
