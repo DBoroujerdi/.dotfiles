@@ -26,11 +26,13 @@ fi
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
 
-export ANDROID_HOME=$HOME/Library/Android/sdk
-export PATH=$PATH:$ANDROID_HOME/emulator
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
-export PATH=$PATH:$HOME/Library/Python/3.11/bin
+if [[ $(uname) == "Darwin" ]]; then
+    export ANDROID_HOME=$HOME/Library/Android/sdk
+    export PATH=$PATH:$ANDROID_HOME/emulator
+    export PATH=$PATH:$ANDROID_HOME/platform-tools
+    export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
+    export PATH=$PATH:$HOME/Library/Python/3.11/bin
+fi
 export PATH=$PATH:$HOME/go/bin
 export PATH=$PATH:$HOME/bin
 export PATH=$PATH:$HOME/.scripts
@@ -46,7 +48,11 @@ alias vim=nvim
 alias zc="nvim ~/.zshrc"
 alias mkdirp="mkdir -p"
 alias vime="vim -u NONE -U NONE -N"
-alias uuid="uuidgen | tr -d '\n' | tr '[:upper:]' '[:lower:]'  | pbcopy && pbpaste && echo"
+if [[ $(uname) == "Darwin" ]]; then
+    alias uuid="uuidgen | tr -d '\n' | tr '[:upper:]' '[:lower:]'  | pbcopy && pbpaste && echo"
+else
+    alias uuid="uuidgen | tr -d '\n' | tr '[:upper:]' '[:lower:]'  | wl-copy && wl-paste && echo"
+fi
 
 # Quick edit with emacsclient
 alias e='emacsclient -nw'
@@ -56,7 +62,11 @@ alias eg='emacsclient --create-frame . >/dev/null 2>&1 &'
 
 
 # Start/stop daemon
-alias emacs-start='open -a Emacs --args --daemon'
+if [[ $(uname) == "Darwin" ]]; then
+    alias emacs-start='open -a Emacs --args --daemon'
+else
+    alias emacs-start='emacs --daemon'
+fi
 alias emacs-stop='emacsclient -e "(kill-emacs)"'
 alias emacs-restart='emacs-stop && emacs-start'
 
@@ -74,7 +84,7 @@ export GPG_TTY=$(tty)
 
 # sst
 export PATH=$HOME/.sst/bin:$PATH
-export PATH="/opt/homebrew/opt/openssl@1.1/bin:$PATH"
+[[ -d "/opt/homebrew/opt/openssl@1.1/bin" ]] && export PATH="/opt/homebrew/opt/openssl@1.1/bin:$PATH"
 
 autoload -U add-zsh-hook
 
@@ -94,6 +104,8 @@ interval() {
 if [[ -d "$HOME/.zsh" ]]; then
     if [[ $(uname) == "Darwin" ]]; then
         [[ -f "$HOME/.zsh/macos.zsh" ]] && source "$HOME/.zsh/macos.zsh"
+    elif command -v pacman > /dev/null; then
+        [[ -f "$HOME/.zsh/arch.zsh" ]] && source "$HOME/.zsh/arch.zsh"
     elif command -v apt > /dev/null; then
         [[ -f "$HOME/.zsh/ubuntu.zsh" ]] && source "$HOME/.zsh/ubuntu.zsh"
     else
@@ -102,7 +114,7 @@ if [[ -d "$HOME/.zsh" ]]; then
 fi
 
 # pnpm
-export PNPM_HOME="/Users/dan/.local/share/pnpm"
+export PNPM_HOME="$HOME/.local/share/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;
@@ -189,7 +201,7 @@ export SDKMAN_DIR="$HOME/.sdkman"
 export PATH="$HOME/.rd/bin:$PATH"
 ### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
 
-. "$HOME/.cargo/env"
+[[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
 
 for f in ~/.zsh/functions/*.zsh; do
@@ -200,7 +212,7 @@ done
 export PATH=$HOME/.opencode/bin:$PATH
 export PATH="$HOME/.local/bin:$PATH"
 
-alias claude="$HOME/.claude/local/claude"
+# alias claude="$HOME/.claude/local/claude"
 
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:$HOME/.lmstudio/bin"

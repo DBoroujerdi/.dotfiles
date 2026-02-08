@@ -1,7 +1,4 @@
-theme = Github-Dark-Default
-
-macos-option-as-alt = true
-
+command = /usr/bin/zsh
 shell-integration = zsh
 
 link-url = true
