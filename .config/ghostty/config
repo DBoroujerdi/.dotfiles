@@ -1,4 +1,7 @@
 command = /usr/bin/zsh
+
+macos-option-as-alt = true
+
 shell-integration = zsh
 
 link-url = true
