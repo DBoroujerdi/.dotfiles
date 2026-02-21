@@ -60,10 +60,9 @@ alias ec='emacsclient -c -nw'
 alias et='emacsclient -t'
 alias eg='emacsclient --create-frame . >/dev/null 2>&1 &'
 
-
-# Start/stop daemon
 if [[ $(uname) == "Darwin" ]]; then
     alias emacs-start='open -a Emacs --args --daemon'
+    alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 else
     alias emacs-start='emacs --daemon'
 fi
@@ -217,3 +216,6 @@ export PATH="$HOME/.local/bin:$PATH"
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:$HOME/.lmstudio/bin"
 # End of LM Studio CLI section
+
+# Load work-specific configurations
+[[ -f ~/.zshrc.work ]] && source ~/.zshrc.work
