@@ -70,7 +70,7 @@ alias emacs-stop='emacsclient -e "(kill-emacs)"'
 alias emacs-restart='emacs-stop && emacs-start'
 
 export EDITOR='nvim'
-export VISUAL='emacsclient -c -a emacs'
+export VISUAL='nvim'
 
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
