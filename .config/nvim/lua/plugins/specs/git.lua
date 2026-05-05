@@ -25,7 +25,7 @@ return {
             return code == 21
           end
           
-          if vim.api.nvim_buf_get_option(0, 'filetype') == 'netrw' then
+          if vim.bo.filetype == 'netrw' then
             local get_netrw_path = function()
               return vim.fn['netrw#Call']('NetrwFile', vim.fn['netrw#Call'] 'NetrwGetWord')
             end

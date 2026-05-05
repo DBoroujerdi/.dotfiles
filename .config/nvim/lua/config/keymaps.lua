@@ -37,7 +37,10 @@ map('n', '<leader>rw', [[:%s/\<<C-r><C-w>\>//gI<Left><Left><Left>]], { desc = 'R
 -- Project picker
 map('n', '<leader>pp', '<cmd>NeovimProjectDiscover<cr>', { desc = 'Open project picker' })
 
-map('n', '<leader>pf', '<cmd>Telescope find_files<cr>', { desc = 'Find files' })
+map('n', '<leader>pf', '<cmd>Telescope find_files hidden=true no_ignore=true no_ignore_parent=true follow=true<cr>', {
+  desc = 'Find files (all, including ignored)',
+})
+map('n', '<leader>pg', '<cmd>Telescope git_files<cr>', { desc = 'Find git files' })
 
 map('n', '<leader>P', '<cmd>Telescope commands<cr>', { desc = 'Command palette (VSCode-like)' })
 
