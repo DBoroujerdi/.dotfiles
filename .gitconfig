@@ -18,6 +18,10 @@
 	compression = 9
 	whitespace = error
 	preloadindex = true
+[url "https://"]
+    insteadOf = git://
+[url "https://github.com/"]
+    insteadOf = git@github.com:
 [url "git@github.com:dboroujerdi/"]
 	insteadOf = "db:"
 [url "git@github.com:"]
@@ -72,6 +76,8 @@
 [delta]
         line-numbers = true
 [credential]
-	helper = /usr/local/bin/git-credential-manager
+	username = DBoroujerdi
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
 [credential "https://dev.azure.com"]
 	useHttpPath = true
