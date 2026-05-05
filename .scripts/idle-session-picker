@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+output=$(wt idle list 2>/dev/null)
+
+if [ -z "$output" ] || [ "$output" = "No sessions." ]; then
+  echo "No idle Claude sessions."
+  sleep 1.5
+  exit 0
+fi
+
+header=$(echo "$output" | head -1)
+rows=$(echo "$output" | tail -n +2 | grep -v '^$' | grep -v '^Note:')
+
+if [ -z "$rows" ]; then
+  echo "No idle Claude sessions."
+  sleep 1.5
+  exit 0
+fi
+
+selected=$(echo "$rows" | fzf \
+  --header="$header" \
+  --reverse \
+  --prompt="Claude idle > " \
+  --no-sort \
+  --height=100%)
+
+[ -z "$selected" ] && exit 0
+
+id=$(echo "$selected" | awk '{print $1}')
+wt idle switch "$id"

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+output=$(wt agent list 2>/dev/null)
+
+if [ -z "$output" ] || [ "$output" = "No agent sessions." ]; then
+  echo "No agent sessions running."
+  sleep 1.5
+  exit 0
+fi
+
+header=$(echo "$output" | head -1)
+rows=$(echo "$output" | tail -n +2 | grep -v '^$' | grep -v '^Note:')
+
+if [ -z "$rows" ]; then
+  echo "No agent sessions running."
+  sleep 1.5
+  exit 0
+fi
+
+result=$(echo "$rows" | fzf \
+  --header="$header  |  enter=switch  ctrl-k=kill  ctrl-a=kill-all" \
+  --reverse \
+  --prompt="Agent > " \
+  --no-sort \
+  --height=100% \
+  --expect=ctrl-k,ctrl-a)
+
+[ -z "$result" ] && exit 0
+
+key=$(echo "$result" | head -1)
+selected=$(echo "$result" | tail -1)
+[ -z "$selected" ] && exit 0
+
+id=$(echo "$selected" | awk '{print $1}')
+
+case "$key" in
+  ctrl-k) wt agent kill "$id" ;;
+  ctrl-a) wt agent kill --all ;;
+  *)      wt agent switch "$id" ;;
+esac
