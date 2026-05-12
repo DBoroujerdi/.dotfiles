@@ -57,8 +57,10 @@ return {
       },
     },
     init = function()
-      -- enable saving the state when changing directories
       vim.opt.sessionoptions:append('globals')
+      -- Ensure the sessions dir exists so session-manager doesn't notify
+      -- "Sessions list is empty" on first launch.
+      vim.fn.mkdir(vim.fn.stdpath('data') .. '/neovim-sessions', 'p')
     end,
   },
 }

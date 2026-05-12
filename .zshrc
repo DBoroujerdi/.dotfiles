@@ -1,7 +1,9 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
-plugins=(git fzf node nvm aws)
+plugins=(git node aws)
+command -v fzf >/dev/null 2>&1 && plugins+=(fzf)
+[[ -s "$HOME/.nvm/nvm.sh" || -s "${XDG_CONFIG_HOME:-$HOME/.config}/nvm/nvm.sh" ]] && plugins+=(nvm)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -120,38 +122,7 @@ case ":$PATH:" in
 esac
 # pnpm end
 
-function export_op_secret() {
-    local secret_path="$1"
-    local env_var_name="$2"
-
-    if ! value=$(op read "$secret_path"); then
-        echo "Failed to read $env_var_name from 1Password at path $secret_path"
-        return 1
-    fi
-    export "$env_var_name=$value"
-}
-
-load_secrets() {
-    # export_op_secret "op://Private/anthropic/api_key" "ANTHROPIC_API_KEY"
-    # export_op_secret "op://Private/openai/api_key" "OPENAI_API_KEY"
-    export_op_secret "op://Private/openrouter/api_key" "OPENROUTER_API_KEY"
-}
-
-#if command -v op >/dev/null 2>&1; then
-#    echo -n "1Password? (y/N): "
-#    read answer
-#
-#    if [[ "$answer" =~ ^[Yy]$ ]]; then
-#        if ! op whoami &>/dev/null; then
-#            echo "Please sign in to 1Password"
-#            eval $(op signin)
-#        fi
-#
-#        load_secrets
-#    fi
-#fi
-
-if [[ -d "$HOME/.deno/env" ]]; then
+if [[ -f "$HOME/.deno/env" ]]; then
     . "$HOME/.deno/env"
 fi
 
@@ -161,35 +132,36 @@ command -v jump >/dev/null 2>&1 && eval "$(jump shell)"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
 
-if [[ -d "$HOME/.local/bin/env" ]]; then
+if [[ -f "$HOME/.local/bin/env" ]]; then
     . "$HOME/.local/bin/env"
 fi
-
 
 # place this after nvm initialization!
 autoload -U add-zsh-hook
 
-load-nvmrc() {
-  local nvmrc_path
-  nvmrc_path="$(nvm_find_nvmrc)"
+if command -v nvm >/dev/null 2>&1 && typeset -f nvm_find_nvmrc >/dev/null 2>&1; then
+  load-nvmrc() {
+    local nvmrc_path
+    nvmrc_path="$(nvm_find_nvmrc)"
 
-  if [ -n "$nvmrc_path" ]; then
-    local nvmrc_node_version
-    nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+    if [ -n "$nvmrc_path" ]; then
+      local nvmrc_node_version
+      nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
 
-    if [ "$nvmrc_node_version" = "N/A" ]; then
-      nvm install
-    elif [ "$nvmrc_node_version" != "$(nvm version)" ]; then
-      nvm use
+      if [ "$nvmrc_node_version" = "N/A" ]; then
+        nvm install
+      elif [ "$nvmrc_node_version" != "$(nvm version)" ]; then
+        nvm use
+      fi
+    elif [ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" ] && [ "$(nvm version)" != "$(nvm version default)" ]; then
+      echo "Reverting to nvm default version"
+      nvm use default
     fi
-  elif [ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" ] && [ "$(nvm version)" != "$(nvm version default)" ]; then
-    echo "Reverting to nvm default version"
-    nvm use default
-  fi
-}
+  }
 
-add-zsh-hook chpwd load-nvmrc
-load-nvmrc
+  add-zsh-hook chpwd load-nvmrc
+  load-nvmrc
+fi
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
@@ -203,9 +175,11 @@ export PATH="$HOME/.rd/bin:$PATH"
 [[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
 
-for f in ~/.zsh/functions/*.zsh; do
-  source "$f"
-done
+if [[ -d ~/.zsh/functions ]]; then
+  for f in ~/.zsh/functions/*.zsh(N); do
+    source "$f"
+  done
+fi
 
 # opencode
 export PATH=$HOME/.opencode/bin:$PATH
@@ -219,3 +193,6 @@ export PATH="$PATH:$HOME/.lmstudio/bin"
 
 # Load work-specific configurations
 [[ -f ~/.zshrc.work ]] && source ~/.zshrc.work
+
+# sentry
+fpath=("$HOME/.local/share/zsh/site-functions" $fpath)
