@@ -3,6 +3,10 @@
 
 local map = vim.keymap.set
 
+-- Prevent <Space> from falling through to its default (move right) when a
+-- <leader>… sequence isn't matched (e.g. <leader>D in a buffer without LSP).
+map({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
+
 -- Clear highlights on search when pressing <Esc> in normal mode
 map('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
