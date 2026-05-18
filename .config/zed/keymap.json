@@ -50,8 +50,8 @@
       "space f f": "file_finder::Toggle",
       "space f s": "pane::DeploySearch",
 
-      "space a s": "assistant::ToggleFocus",
-      "ctrl-a": "assistant::ToggleFocus",
+      "space a s": "agent::ToggleFocus",
+      "ctrl-a": "agent::ToggleFocus",
       "space a i": "assistant::InlineAssist",
 
       "cmd-alt-k": "editor::AddSelectionAbove", // Insert cursor above
@@ -226,6 +226,12 @@
       "ctrl-k": "workspace::ActivatePaneUp",
       "ctrl-j": "workspace::ActivatePaneDown"
     }
+  },
+  {
+    "context": "ThreadsSidebar",
+    "bindings": {
+      "ctrl-l": "workspace::ActivatePaneRight",
+    },
   },
   {
     "context": "Editor",

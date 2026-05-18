@@ -7,8 +7,50 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
-  "features": {
-    "edit_prediction_provider": "zed"
+  "diagnostics": {
+    "inline": {
+      "enabled": true
+    }
+  },
+  "auto_update_extensions": {
+    "oxc": true
+  },
+  "agent_servers": {
+    "opencode": {
+      "type": "registry"
+    },
+    "gemini": {
+      "type": "registry"
+    },
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "cli_default_open_behavior": "existing_window",
+  "outline_panel": {
+    "dock": "right"
+  },
+  "collaboration_panel": {
+    "dock": "right"
+  },
+  "git_panel": {
+    "dock": "right"
+  },
+  "agent": {
+    "dock": "left",
+    "default_model": {
+      "provider": "zed.dev",
+      "model": "claude-sonnet-4-6",
+      "enable_thinking": true,
+      "effort": "medium",
+    },
+    "favorite_models": [],
+    "inline_assistant_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-5-mini",
+      "enable_thinking": false,
+    },
+    "model_parameters": [],
   },
   "ssh_connections": [
     {
@@ -16,46 +58,31 @@
       "username": "dan",
       "projects": [
         {
-          "paths": [
-            "~/projects"
-          ]
-        }
-      ]
+          "paths": ["~/projects"],
+        },
+      ],
     },
     {
       "host": "devbox",
       "username": "dan",
-      "projects": []
-    }
-  ],
-  "assistant": {
-    "always_allow_tool_actions": true,
-    "default_profile": "write",
-    "default_model": {
-      "provider": "zed.dev",
-      "model": "claude-3-7-sonnet-latest"
+      "projects": [],
     },
-    "version": "2"
-  },
+  ],
   "language_models": {
     "ollama": {
-      "api_url": "http://devbox:11434"
-    }
-  },
-  "theme": {
-    "mode": "system",
-    "light": "Github Dark",
-    "dark": "Github Dark"
+      "api_url": "http://devbox:11434",
+    },
   },
   "auto_update": true,
   "vim_mode": true,
   "ui_font_size": 16,
   "buffer_font_size": 11.0,
-  "format_on_save": "on",
+  "format_on_save": "off",
+  "prettier": { "allowed": false },
   "cursor_blink": false,
-  "relative_line_numbers": true,
+  "relative_line_numbers": "enabled",
   "scrollbar": {
-    "show": "always"
+    "show": "always",
   },
   "project_panel": {
     "dock": "right",
@@ -63,66 +90,72 @@
     "file_icons": true,
     "git_status": true,
     "indent_size": 5,
-    "default_width": 200
+    "default_width": 200,
+    "show_diagnostics": "all",
   },
   "buffer_font_features": {
     "calt": false,
-    "liga": false
+    "liga": false,
   },
   "terminal": {
     "option_as_meta": true,
     "font_features": {
-      "ligatures": false
-    }
-  },
-  "lsp": {
-    "eslint": {
-      "settings": {
-        "codeActionOnSave": {
-          "rules": ["import/order"]
-        }
-      }
-    }
+      "ligatures": false,
+    },
   },
   "languages": {
-    "TypeScript": {
-      "format_on_save": {
-        "external": {
-          "command": "prettier",
-          "arguments": ["--stdin-filepath", "{buffer_path}"]
-        }
-      },
-      "formatter": {
-        "code_actions": {
-          "source.fixAll.eslint": true
-        }
-      }
-    },
-    "TSX": {
-      "format_on_save": {
-        "external": {
-          "command": "prettier",
-          "arguments": ["--stdin-filepath", "{buffer_path}"]
-        }
-      },
-      "formatter": {
-        "code_actions": {
-          "source.fixAll.eslint": true
-        }
-      }
+    "PHP": {
+        "language_servers": ["intelephense", "!phpactor", "!phptools"]
     },
     "JavaScript": {
-      "format_on_save": {
-        "external": {
-          "command": "prettier",
-          "arguments": ["--stdin-filepath", "{buffer_path}"]
-        }
+      "format_on_save": "on",
+      "prettier": {
+        "allowed": false
       },
-      "formatter": {
-        "code_actions": {
-          "source.fixAll.eslint": true
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        },
+        {
+          "code_action": "source.fixAll.oxc"
         }
-      }
+      ]
+    },
+    "TypeScript": {
+      "format_on_save": "on",
+      "prettier": {
+        "allowed": false
+      },
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        }
+      ]
+    },
+    "TSX": {
+      "format_on_save": "on",
+      "prettier": {
+        "allowed": false
+      },
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        }
+      ]
+    },
+    "Python": {
+      "language_servers": ["ruff", "pyright"],
+      "formatter": [
+        { "code_action": "source.organizeImports.ruff" },
+        { "code_action": "source.fixAll.ruff" },
+        { "language_server": { "name": "ruff" } }
+      ]
     }
   }
 }
