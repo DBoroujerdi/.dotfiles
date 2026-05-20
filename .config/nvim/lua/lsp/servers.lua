@@ -20,6 +20,7 @@ local servers = {
   gopls = {},
   ts_ls = {},
   terraformls = {},
+  clangd = {},
   lua_ls = {
     settings = {
       Lua = {
@@ -38,6 +39,7 @@ vim.list_extend(ensure_installed, {
   'eslint_d', -- Used to lint JavaScript/TypeScript code
   'prettierd', -- Used to format JavaScript/TypeScript and other files
   'prettier', -- Fallback formatter if prettierd is not available
+  'clang-format', -- Used to format C/C++ code
 })
 
 local ok_mason_tool, mason_tool = pcall(require, 'mason-tool-installer')

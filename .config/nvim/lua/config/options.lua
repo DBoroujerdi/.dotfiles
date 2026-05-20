@@ -53,3 +53,12 @@ vim.opt.inccommand = 'split'
 -- Cursor and scroll
 vim.opt.cursorline = true
 vim.opt.scrolloff = 10
+
+-- Diagnostics
+vim.diagnostic.config({
+  virtual_text = { prefix = '●', spacing = 2 },
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+})

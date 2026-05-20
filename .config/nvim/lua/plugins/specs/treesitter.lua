@@ -7,7 +7,7 @@ return {
     build = ':TSUpdate',
     opts = {
       ensure_installed = {
-        'bash', 'c', 'html', 'lua', 'markdown', 'vim', 'vimdoc',
+        'bash', 'c', 'cpp', 'html', 'lua', 'markdown', 'vim', 'vimdoc',
         'css', 'javascript', 'typescript', 'json', 'yaml', 'python',
         'go', 'terraform'
       },
