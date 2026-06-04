@@ -73,6 +73,7 @@ alias emacs-restart='emacs-stop && emacs-start'
 
 export EDITOR='nvim'
 export VISUAL='nvim'
+export GIT_EDITOR='nvim'
 
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
