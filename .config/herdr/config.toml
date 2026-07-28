@@ -1,0 +1,176 @@
+# herdr configuration — https://herdr.dev/docs/configuration/
+#
+# Keybindings mirror ~/.dotfiles/.tmux.conf as closely as herdr allows.
+# See KEYBINDINGS.md (same directory) for the full table and the deltas.
+#
+# Apply changes to a running server with: herdr server reload-config  (§ r)
+
+[theme]
+# tmux uses a tokyo-night palette (#7aa2f7 borders, #1a1b26 / #c0caf5 panes)
+name = "tokyo-night"
+
+[terminal]
+# tmux: if-shell Darwin -> set -g default-command /bin/zsh
+default_shell = "/bin/zsh"
+shell_mode = "auto"
+# tmux: bind c new-window -c "#{pane_current_path}" (and the -c flag on splits)
+new_cwd = "follow"
+
+[worktrees]
+directory = "~/projects/worktrees"
+
+[keys]
+# tmux: unbind C-b; set-option -g prefix §
+prefix = "§"
+
+# ── Tabs (tmux windows) ───────────────────────────────────────────────────────
+new_tab = "prefix+c"                 # tmux: bind c new-window
+next_tab = "prefix+n"                # tmux: next-window
+previous_tab = "prefix+p"            # tmux: previous-window
+switch_tab = "prefix+1..9"           # tmux: select-window (base-index 1)
+rename_tab = "prefix+comma"          # tmux: rename-window
+close_tab = "prefix+ampersand"       # tmux: bind & confirm-before kill-window
+
+# ── Panes ────────────────────────────────────────────────────────────────────
+split_vertical = ["prefix+|", "prefix+v"]   # tmux: bind | split-window -h
+split_horizontal = "prefix+minus"           # tmux: bind - split-window -v
+close_pane = "prefix+x"                     # tmux: kill-pane
+zoom = "prefix+z"                           # tmux: resize-pane -Z
+rename_pane = "prefix+shift+p"
+edit_scrollback = "prefix+e"                # nearest thing to tmux copy-mode
+
+# tmux: bind -n M-h/j/k/l select-pane (no prefix). prefix+hjkl kept as a fallback.
+focus_pane_left = ["alt+h", "prefix+h"]
+focus_pane_down = ["alt+j", "prefix+j"]
+focus_pane_up = ["alt+k", "prefix+k"]
+focus_pane_right = ["alt+l", "prefix+l"]
+cycle_pane_next = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
+
+# tmux has no modal resize (it uses bind -n M-H/J/K/L resize-pane -5).
+# herdr only offers a resize *mode*: enter it, then h/j/k/l, esc to exit.
+# Moved off prefix+r so tmux's `r` = reload keeps its key.
+resize_mode = "prefix+alt+r"
+
+# ── Workspaces (tmux sessions) ───────────────────────────────────────────────
+# tmux: @sessionx-bind 'f', choose-tree (w), choose-tree -s (s)
+workspace_picker = ["prefix+f", "prefix+w", "prefix+s"]
+new_workspace = "prefix+shift+n"
+rename_workspace = "prefix+shift+w"
+close_workspace = "prefix+shift+d"
+goto = "prefix+space"                        # moved off prefix+g, which is lazygit
+
+# ── Worktrees (tmux: the `W` display-menu, via the `wt` scripts) ─────────────
+new_worktree = "prefix+shift+g"
+open_worktree = "prefix+shift+o"
+# remove_worktree is destructive and left unbound; set it if you want it.
+remove_worktree = ""
+
+# ── Session / app ────────────────────────────────────────────────────────────
+help = "prefix+?"                    # tmux: list-keys
+detach = "prefix+d"                  # tmux: detach-client
+reload_config = "prefix+r"           # tmux: bind r source-file ~/.tmux.conf
+settings = "prefix+shift+s"          # moved off prefix+s, which is tmux's session picker
+toggle_sidebar = "prefix+b"
+open_notification_target = "prefix+o"
+
+# Agent rows have no tmux equivalent — uncomment if you want them:
+# previous_agent = ""
+# next_agent = ""
+# focus_agent = "prefix+alt+1..9"
+
+# Navigate-mode movement (tmux: setw -g mode-keys vi).
+# j/k cycle workspaces, with the arrows kept as aliases.
+navigate_workspace_up = ["k", "up"]
+navigate_workspace_down = ["j", "down"]
+# Panes keep h/l; j/k now belong to workspaces, so pane up/down moves to ctrl.
+# (Binding both to j/k silently disables the pane pair — workspaces win.)
+navigate_pane_left = "h"
+navigate_pane_right = "l"
+navigate_pane_up = "ctrl+k"
+navigate_pane_down = "ctrl+j"
+
+# ── Popups (tmux display-popup bindings) ─────────────────────────────────────
+
+# tmux: bind g display-popup -w 80% -h 80% -E "lazygit"
+[[keys.command]]
+key = "prefix+g"
+type = "popup"
+command = "lazygit"
+description = "lazygit"
+width = "80%"
+height = "80%"
+
+# tmux: bind G display-popup -w 60% -h 60% -E "magit"
+# prefix+shift+g is herdr's new_worktree, so magit moves to prefix+alt+g.
+[[keys.command]]
+key = "prefix+alt+g"
+type = "popup"
+command = "magit"
+description = "magit"
+width = "60%"
+height = "60%"
+
+# tmux: bind R display-popup -w 80% -h 80% -E "ranger"
+[[keys.command]]
+key = "prefix+shift+r"
+type = "popup"
+command = "ranger"
+description = "ranger"
+width = "80%"
+height = "80%"
+
+# tmux: bind T display-popup -w 75% -h 75% -E "zsh"
+[[keys.command]]
+key = "prefix+shift+t"
+type = "popup"
+command = "zsh"
+description = "scratch shell"
+width = "75%"
+height = "75%"
+
+# tmux: bind K display-popup -w 80% -h 80% -E "bat ... nvim/KEYBINDINGS.md"
+[[keys.command]]
+key = "prefix+shift+k"
+type = "popup"
+command = "bat --style=plain --paging=always ~/.config/nvim/KEYBINDINGS.md"
+description = "nvim keybindings"
+width = "80%"
+height = "80%"
+
+# Same idea for herdr's own cheatsheet.
+[[keys.command]]
+key = "prefix+alt+k"
+type = "popup"
+command = "bat --style=plain --paging=always ~/.config/herdr/KEYBINDINGS.md"
+description = "herdr keybindings"
+width = "80%"
+height = "80%"
+
+# tmux: bind a display-popup -w 75% -h 40% -E "~/.dotfiles/.scripts/idle-session-picker"
+[[keys.command]]
+key = "prefix+a"
+type = "popup"
+command = "~/.dotfiles/.scripts/idle-session-picker"
+description = "idle session picker"
+width = "75%"
+height = "40%"
+
+# tmux: bind C display-popup -w 75% -h 40% -E "~/.dotfiles/.scripts/agent-session-picker"
+[[keys.command]]
+key = "prefix+shift+c"
+type = "popup"
+command = "~/.dotfiles/.scripts/agent-session-picker"
+description = "agent session picker"
+width = "75%"
+height = "40%"
+
+[ui]
+# tmux: set -g mouse on
+mouse_capture = true
+copy_on_select = true
+accent = "#7aa2f7"
+
+[experimental]
+pane_history = true
+switch_ascii_input_source_in_prefix = true
