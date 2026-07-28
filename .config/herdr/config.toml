@@ -174,3 +174,33 @@ accent = "#7aa2f7"
 [experimental]
 pane_history = true
 switch_ascii_input_source_in_prefix = true
+
+# ── Pane resize (tmux: bind -n M-H/J/K/L resize-pane -L/-D/-U/-R 5) ─────────
+# herdr has no built-in directional resize action, but the CLI has one and
+# key-bound shell commands run with HERDR_ACTIVE_* set, so --current resolves
+# to the focused pane. --amount is a fraction of the split (clamped 0.1–0.9),
+# not a cell count, so 0.05 ≈ 5% per press rather than tmux's 5 columns.
+
+[[keys.command]]
+key = "alt+shift+h"
+type = "shell"
+command = "herdr pane resize --current --direction left --amount 0.05"
+description = "resize pane left"
+
+[[keys.command]]
+key = "alt+shift+j"
+type = "shell"
+command = "herdr pane resize --current --direction down --amount 0.05"
+description = "resize pane down"
+
+[[keys.command]]
+key = "alt+shift+k"
+type = "shell"
+command = "herdr pane resize --current --direction up --amount 0.05"
+description = "resize pane up"
+
+[[keys.command]]
+key = "alt+shift+l"
+type = "shell"
+command = "herdr pane resize --current --direction right --amount 0.05"
+description = "resize pane right"

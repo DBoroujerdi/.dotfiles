@@ -35,7 +35,15 @@ session.
 | `§ z` | Zoom pane | `resize-pane -Z` |
 | `§ shift+p` | Rename pane | — |
 | `§ e` | Edit scrollback in `$EDITOR` | nearest to `copy-mode` |
-| `§ alt+r` | Resize mode → then `h/j/k/l`, `esc` to exit | see [deltas](#deltas-from-tmux) |
+| `alt+shift+h/j/k/l` | Resize pane left/down/up/right | `bind -n M-H/J/K/L resize-pane 5` |
+| `§ alt+r` | Resize mode → then `h/j/k/l`, `esc` to exit | — |
+
+You can also drag pane borders with the mouse.
+
+Resize step is **proportional, not columns**: `--amount 0.05` shifts the split
+ratio by 5% per press, where tmux moved a fixed 5 cells. Ratios clamp at
+0.1–0.9, so a pane can't be driven below 10% of its split. Adjust the `0.05` in
+the four `[[keys.command]]` blocks to taste.
 
 ## Workspaces (tmux sessions)
 
@@ -107,14 +115,16 @@ Same keys and sizes as the tmux `display-popup` bindings, except magit
 
 ## Deltas from tmux
 
-Four keys had to move because herdr's own action collided with a tmux binding:
+Three keys had to move because herdr's own action collided with a tmux binding:
 
 | What | tmux | herdr | Why |
 |---|---|---|---|
 | Settings | — | `§ shift+s` | herdr's default `§ s` is tmux's session picker, so `§ s` opens the workspace picker instead |
 | magit popup | `§ G` | `§ alt+g` | `§ shift+g` is herdr's new-worktree |
-| Resize | `alt+H/J/K/L` (direct, ±5) | `§ alt+r` then `h/j/k/l` | herdr has a resize *mode*, not directional actions; `§ r` is reload and `§ shift+r` is ranger |
 | Navigate mode | — | `§ space` | herdr's default `§ g` is lazygit here |
+
+Resize keeps its tmux keys (`alt+shift+h/j/k/l`) but steps by ratio rather than
+columns — see [Panes](#panes).
 
 ## Not carried over
 
