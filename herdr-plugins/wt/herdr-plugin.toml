@@ -1,0 +1,14 @@
+id = "danielb.wt"
+name = "Worktree Bootstrap"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Bootstrap a new worktree workspace from the repo's .wt.toml: copy git-ignored files, build tabs and panes, start agents."
+platforms = ["macos", "linux"]
+
+[[events]]
+on = "worktree.created"
+command = ["sh", "run.sh"]
+
+[[events]]
+on = "worktree.opened"
+command = ["sh", "run.sh"]
