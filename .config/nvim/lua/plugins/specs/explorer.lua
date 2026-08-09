@@ -6,6 +6,10 @@ return {
   {
     'nvim-tree/nvim-tree.lua',
     lazy = false,
+    init = function()
+      -- Ensure FileExplorer augroup exists so nvim-tree's manage_netrw VimEnter autocmd doesn't throw E216
+      vim.api.nvim_create_augroup('FileExplorer', { clear = true })
+    end,
     keys = {
       { '<C-n>', ':NvimTreeToggle<CR>' },
     },
