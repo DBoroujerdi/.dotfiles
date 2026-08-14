@@ -1,3 +1,4 @@
+onboarding = false
 # herdr configuration — https://herdr.dev/docs/configuration/
 #
 # Keybindings mirror ~/.dotfiles/.tmux.conf as closely as herdr allows.
@@ -165,11 +166,35 @@ description = "agent session picker"
 width = "75%"
 height = "40%"
 
+[[keys.command]]
+key = "prefix+t"
+type = "plugin_action"
+command = "herdr-navigator.open"
+description = "jump to anything"
+
+[[keys.command]]
+key = "prefix+alt+o"
+type = "plugin_action"
+command = "danielb.pr-status.open-pr"
+description = "open workspace PR in browser"
+
+[[keys.command]]
+key = "prefix+alt+p"
+type = "plugin_action"
+command = "danielb.pr-status.view-prs"
+description = "list repo open PRs"
+
+
+
 [ui]
 # tmux: set -g mouse on
 mouse_capture = true
 copy_on_select = true
 accent = "#7aa2f7"
+
+[ui.sidebar.spaces]
+rows = [["state_icon", "workspace"], ["branch", "git_status", "$pr_status"]]
+
 
 [experimental]
 pane_history = true

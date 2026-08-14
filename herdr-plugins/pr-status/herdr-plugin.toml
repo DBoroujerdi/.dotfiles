@@ -1,0 +1,50 @@
+id = "danielb.pr-status"
+name = "Herdr PR Status"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Displays active open PRs and approval status in the Herdr sidebar, strictly scoped to the focused Git repository."
+platforms = ["macos", "linux"]
+
+[[events]]
+on = "workspace.focused"
+command = ["python3", "pr_status.py"]
+
+[[events]]
+on = "workspace.created"
+command = ["python3", "pr_status.py"]
+
+[[events]]
+on = "workspace.updated"
+command = ["python3", "pr_status.py"]
+
+[[events]]
+on = "worktree.created"
+command = ["python3", "pr_status.py"]
+
+[[events]]
+on = "worktree.opened"
+command = ["python3", "pr_status.py"]
+
+[[actions]]
+id = "refresh"
+title = "PR Status: Refresh"
+contexts = ["workspace", "global"]
+command = ["python3", "pr_status.py", "--force"]
+
+[[actions]]
+id = "open-pr"
+title = "PR Status: Open PR in Browser"
+contexts = ["workspace", "global"]
+command = ["python3", "pr_status.py", "--open"]
+
+[[actions]]
+id = "view-prs"
+title = "PR Status: List Repo PRs"
+contexts = ["workspace", "global"]
+command = ["python3", "pr_status.py", "--ui"]
+
+[[panes]]
+id = "prs-overlay"
+title = "Active Repo Pull Requests"
+placement = "overlay"
+command = ["python3", "pr_status.py", "--ui"]
