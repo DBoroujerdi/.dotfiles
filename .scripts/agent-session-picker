@@ -1,41 +1,117 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+import sys
+import os
+import json
+import subprocess
+import time
 
-output=$(wt agent list 2>/dev/null)
+def main():
+    only_idle = "--idle" in sys.argv
 
-if [ -z "$output" ] || [ "$output" = "No agent sessions." ]; then
-  echo "No agent sessions running."
-  sleep 1.5
-  exit 0
-fi
+    try:
+        agents_raw = subprocess.check_output(["herdr", "agent", "list"], stderr=subprocess.DEVNULL)
+        workspaces_raw = subprocess.check_output(["herdr", "workspace", "list"], stderr=subprocess.DEVNULL)
+    except Exception:
+        print("Error communicating with Herdr server.")
+        time.sleep(1.5)
+        sys.exit(1)
 
-header=$(echo "$output" | head -1)
-rows=$(echo "$output" | tail -n +2 | grep -v '^$' | grep -v '^Note:')
+    try:
+        agents = json.loads(agents_raw).get("result", {}).get("agents", [])
+        workspaces_list = json.loads(workspaces_raw).get("result", {}).get("workspaces", [])
+        workspaces = {w["workspace_id"]: w.get("label", w["workspace_id"]) for w in workspaces_list}
+    except Exception as e:
+        print(f"Error parsing Herdr response: {e}")
+        time.sleep(1.5)
+        sys.exit(1)
 
-if [ -z "$rows" ]; then
-  echo "No agent sessions running."
-  sleep 1.5
-  exit 0
-fi
+    if only_idle:
+        agents = [a for a in agents if a.get("agent_status") in ("idle", "done", "blocked")]
 
-result=$(echo "$rows" | fzf \
-  --header="$header  |  enter=switch  ctrl-k=kill  ctrl-a=kill-all" \
-  --reverse \
-  --prompt="Agent > " \
-  --no-sort \
-  --height=100% \
-  --expect=ctrl-k,ctrl-a)
+    if not agents:
+        msg = "No idle agent sessions in Herdr." if only_idle else "No active agent sessions in Herdr."
+        print(msg)
+        time.sleep(1.5)
+        sys.exit(0)
 
-[ -z "$result" ] && exit 0
+    status_icons = {
+        "working": "⏳",
+        "idle": "💤",
+        "done": "✅",
+        "blocked": "⚠️",
+        "unknown": "❓"
+    }
 
-key=$(echo "$result" | head -1)
-selected=$(echo "$result" | tail -1)
-[ -z "$selected" ] && exit 0
+    home = os.path.expanduser("~")
+    rows = []
 
-id=$(echo "$selected" | awk '{print $1}')
+    for a in agents:
+        pane_id = a.get("pane_id", "")
+        agent = a.get("agent", "agent")
+        status = a.get("agent_status", "unknown")
+        icon = status_icons.get(status, " ")
+        ws_id = a.get("workspace_id", "")
+        ws_label = workspaces.get(ws_id, ws_id)
 
-case "$key" in
-  ctrl-k) wt agent kill "$id" ;;
-  ctrl-a) wt agent kill --all ;;
-  *)      wt agent switch "$id" ;;
-esac
+        title = a.get("terminal_title_stripped", "") or a.get("terminal_title", "")
+        cwd = a.get("cwd", "")
+        if cwd.startswith(home):
+            cwd = "~" + cwd[len(home):]
+
+        detail = title if title and not title.startswith(agent) else cwd
+        rows.append(f"{pane_id}\t{agent:<8} {icon} {status:<8} │ {ws_label:<22} │ {detail}")
+
+    input_data = "\n".join(rows)
+
+    header = "AGENT    STATUS       │ WORKSPACE              │ TOPIC / DIRECTORY\nenter=focus  ctrl-k=close-pane  j/k=navigate"
+    prompt = "Herdr Idle > " if only_idle else "Herdr Agent > "
+
+    fzf_cmd = [
+        "fzf",
+        "--delimiter=\t",
+        "--with-nth=2..",
+        f"--header={header}",
+        "--reverse",
+        f"--prompt={prompt}",
+        "--no-sort",
+        "--height=100%",
+        "--bind=j:down,k:up,ctrl-j:down,ctrl-k:up",
+        "--expect=ctrl-k"
+    ]
+
+    try:
+        proc = subprocess.Popen(
+            fzf_cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            text=True
+        )
+        stdout, _ = proc.communicate(input=input_data)
+    except FileNotFoundError:
+        print("fzf is required but not found in PATH.")
+        time.sleep(1.5)
+        sys.exit(1)
+
+    if proc.returncode != 0 or not stdout.strip():
+        sys.exit(0)
+
+    lines = stdout.strip().split("\n")
+    if len(lines) == 1:
+        key = ""
+        selected = lines[0]
+    else:
+        key = lines[0]
+        selected = lines[1]
+
+    if not selected:
+        sys.exit(0)
+
+    pane_id = selected.split("\t")[0].strip()
+
+    if key == "ctrl-k":
+        subprocess.run(["herdr", "pane", "close", pane_id])
+    else:
+        subprocess.run(["herdr", "agent", "focus", pane_id])
+
+if __name__ == "__main__":
+    main()
