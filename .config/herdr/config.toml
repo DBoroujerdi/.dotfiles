@@ -148,21 +148,21 @@ description = "herdr keybindings"
 width = "80%"
 height = "80%"
 
-# tmux: bind a display-popup -w 75% -h 40% -E "~/.dotfiles/.scripts/idle-session-picker"
+# Agent session picker (all Herdr agents: claude, agy, codex, etc.)
 [[keys.command]]
 key = "prefix+a"
 type = "popup"
-command = "~/.dotfiles/.scripts/idle-session-picker"
-description = "idle session picker"
+command = "~/.dotfiles/.scripts/agent-session-picker"
+description = "agent session picker"
 width = "75%"
 height = "40%"
 
-# tmux: bind C display-popup -w 75% -h 40% -E "~/.dotfiles/.scripts/agent-session-picker"
+# Idle agent session picker (agents needing input / idle)
 [[keys.command]]
-key = "prefix+shift+c"
+key = "prefix+shift+a"
 type = "popup"
-command = "~/.dotfiles/.scripts/agent-session-picker"
-description = "agent session picker"
+command = "~/.dotfiles/.scripts/idle-session-picker"
+description = "idle session picker"
 width = "75%"
 height = "40%"
 
@@ -193,7 +193,18 @@ copy_on_select = true
 accent = "#7aa2f7"
 
 [ui.sidebar.spaces]
-rows = [["state_icon", "workspace"], ["branch", "git_status", "$pr_status"]]
+rows = [
+  [
+    "state_icon",
+    { token = "$pr_approved", fg = "#50fa7b", bold = true },
+    { token = "$pr_changes", fg = "#ff5555", bold = true },
+    { token = "$pr_review", fg = "#ffb86c", bold = true },
+    { token = "$pr_draft", fg = "#6272a4", dim = true },
+    "workspace"
+  ],
+  ["branch", "git_status"]
+]
+
 
 
 [experimental]

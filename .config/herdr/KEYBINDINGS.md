@@ -110,8 +110,8 @@ Same keys and sizes as the tmux `display-popup` bindings, except magit
 | `§ shift+t` | scratch zsh | 75×75% |
 | `§ shift+k` | nvim keybindings cheatsheet | 80×80% |
 | `§ alt+k` | this file | 80×80% |
-| `§ a` | idle session picker | 75×40% |
-| `§ shift+c` | agent session picker | 75×40% |
+| `§ a` | agent session picker (all Herdr agents) | 75×40% |
+| `§ shift+a` | idle session picker (idle/attention agents) | 75×40% |
 
 ## Deltas from tmux
 
