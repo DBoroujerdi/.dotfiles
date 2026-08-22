@@ -16,8 +16,8 @@
 
 local ensure_installed = {
   'bash', 'c', 'cpp', 'html', 'lua', 'markdown', 'markdown_inline', 'vim', 'vimdoc',
-  'css', 'javascript', 'typescript', 'json', 'yaml', 'python',
-  'go', 'terraform',
+  'css', 'javascript', 'typescript', 'tsx', 'jsdoc', 'json', 'yaml', 'python',
+  'go', 'terraform', 'regex',
 }
 
 return {
