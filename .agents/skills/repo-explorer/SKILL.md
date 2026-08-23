@@ -1,6 +1,6 @@
 ---
 name: repo-explorer
-description: Clone and inspect external open source repositories in a reusable local exploration cache. Use this skill when the user asks to explore, inspect, investigate, compare, read the source of, or answer questions about how a repository or library works internally — especially one that is not already in the current workspace.
+description: Clone and inspect external git repositories in a local cache directory without workspace pollution. Use when exploring, inspecting, comparing, or reading the source of external repositories or libraries.
 allowed-tools: Bash(mkdir -p ~/projects/explore), Bash(ls -la ~/projects/explore), Bash(git clone *)
 ---
 
