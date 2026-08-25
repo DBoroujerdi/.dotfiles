@@ -21,6 +21,7 @@ local servers = {
   ts_ls = {},
   terraformls = {},
   clangd = {},
+  intelephense = {},
   lua_ls = {
     settings = {
       Lua = {
