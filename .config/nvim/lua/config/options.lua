@@ -38,6 +38,7 @@ vim.opt.signcolumn = 'yes'
 -- Performance settings
 vim.opt.updatetime = 250
 vim.opt.timeoutlen = 300
+vim.opt.autoread = true
 
 -- Split behavior
 vim.opt.splitright = true

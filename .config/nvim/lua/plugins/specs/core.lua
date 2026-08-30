@@ -63,4 +63,15 @@ return {
       vim.fn.mkdir(vim.fn.stdpath('data') .. '/neovim-sessions', 'p')
     end,
   },
+
+  -- Instant real-time buffer reloading when files change on disk (via libuv fs_event)
+  {
+    'diegok/live-autoread.nvim',
+    event = { 'BufReadPost', 'BufNewFile' },
+    opts = {
+      debounce_ms = 100,
+      notify_on_conflict = true,
+      notify_on_reload = false,
+    },
+  },
 }
