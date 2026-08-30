@@ -14,6 +14,7 @@ session.
 | Keys | Action | tmux |
 |---|---|---|
 | `§ c` | New tab | `bind c new-window` |
+| `§ v` | Switch to or create `vim` tab (runs `nvim`) | — |
 | `§ n` | Next tab | `next-window` |
 | `§ p` | Previous tab | `previous-window` |
 | `§ 1`–`§ 9` | Jump to tab N | `select-window` |
@@ -25,7 +26,6 @@ session.
 | Keys | Action | tmux |
 |---|---|---|
 | `§ \|` | Split side-by-side | `bind \| split-window -h` |
-| `§ v` | Split side-by-side (alias) | — |
 | `§ -` | Split stacked | `bind - split-window -v` |
 | `alt+h` / `alt+j` / `alt+k` / `alt+l` | Focus pane left/down/up/right | `bind -n M-h/j/k/l select-pane` |
 | `§ h` / `§ j` / `§ k` / `§ l` | Focus pane (prefixed fallback) | — |
@@ -49,9 +49,9 @@ the four `[[keys.command]]` blocks to taste.
 
 | Keys | Action | tmux |
 |---|---|---|
-| `§ f` | Workspace picker | `@sessionx-bind 'f'` |
-| `§ w` | Workspace picker (alias) | `choose-tree` |
-| `§ s` | Workspace picker (alias) | `choose-tree -s` |
+| `§ w` | Workspace MRU picker (recency order, most recent at bottom) | `choose-tree` |
+| `§ s` | Workspace & worktree tree picker (collapsible with `h`/`l`, `j`/`k`) | `choose-tree -s` |
+| `§ f` | Flat workspace picker (native Herdr) | `@sessionx-bind 'f'` |
 | `§ shift+n` | New workspace | — |
 | `§ shift+w` | Rename workspace | `rename-session` |
 | `§ shift+d` | Close workspace | `kill-session` |
@@ -110,8 +110,10 @@ Same keys and sizes as the tmux `display-popup` bindings, except magit
 | `§ shift+t` | scratch zsh | 75×75% |
 | `§ shift+k` | nvim keybindings cheatsheet | 80×80% |
 | `§ alt+k` | this file | 80×80% |
+| `§ w` | workspace MRU picker (recency order, most recent at bottom) | 85×60% |
 | `§ a` | agent session picker (all Herdr agents) | 75×40% |
 | `§ shift+a` | idle session picker (idle/attention agents) | 75×40% |
+| `§ t` | fuzzy picker across agents, worktrees & panes (Ctrl-T for buffer text) | 90×85% |
 
 ## Deltas from tmux
 
@@ -130,7 +132,7 @@ columns — see [Panes](#panes).
 
 | tmux binding | Why |
 |---|---|
-| `§ v` watch-session popup | The script is tmux-specific (`display-popup -x` pinning, `#{session_name}`). `§ v` is a split alias instead. |
+| `§ v` watch-session popup | The script is tmux-specific (`display-popup -x` pinning, `#{session_name}`). `§ v` opens or switches to the workspace's `vim` tab instead. |
 | `§ M` dotfiles menu | herdr has no `display-menu` equivalent. |
 | `§ o` tmux-sessionizer | Script shells out to `tmux neww`. Closest: `§ f` picker or `§ shift+n`. |
 | `§ (` / `§ )` session switching | Left unbound; `previous_workspace` / `next_workspace` exist if you want them. |

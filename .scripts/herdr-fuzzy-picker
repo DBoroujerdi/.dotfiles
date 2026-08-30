@@ -1,0 +1,476 @@
+#!/usr/bin/env python3
+"""
+Herdr Fuzzy Picker
+Fast fuzzy picker across agents, worktrees, and panes with rich live preview.
+By default searches metadata (topics, PRs, branches, commands, paths).
+Deep buffer text search is available on demand via Ctrl-T or --content.
+"""
+
+import os
+import sys
+import json
+import re
+import socket
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
+
+SOCKET_PATH = os.path.expanduser("~/.config/herdr/herdr.sock")
+HOME = os.path.expanduser("~")
+
+# ANSI styling
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+ITALIC = "\033[3m"
+
+# Palette (Tokyo Night aligned)
+CYAN = "\033[38;2;122;162;247m"       # #7aa2f7
+MAGENTA = "\033[38;2;187;154;247m"   # #bb9af7
+GREEN = "\033[38;2;158;206;106m"     # #9ece6a
+YELLOW = "\033[38;2;224;175;104m"    # #e0af68
+ORANGE = "\033[38;2;255;158;100m"    # #ff9e64
+RED = "\033[38;2;247;118;142m"       # #f7768e
+GRAY = "\033[38;2;86;95;137m"        # #565f89
+WHITE = "\033[38;2;192;202;245m"     # #c0caf5
+
+STATUS_ICONS = {
+    "idle": "💤",
+    "working": "⏳",
+    "done": "✅",
+    "blocked": "⚠️",
+    "unknown": "❓"
+}
+
+def rpc_call(method, params=None, req_id="1", timeout=1.0):
+    """Execute a single RPC request over the Herdr Unix domain socket."""
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect(SOCKET_PATH)
+        msg = {"id": req_id, "method": method, "params": params or {}}
+        s.sendall(json.dumps(msg).encode("utf-8") + b"\n")
+        data = b""
+        while True:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            data += chunk
+            if b"\n" in chunk:
+                break
+        s.close()
+        return json.loads(data.decode("utf-8"))
+    except Exception:
+        # Fallback to CLI if socket fails
+        try:
+            cmd = ["herdr", "api", "snapshot"] if method == "session.snapshot" else None
+            if cmd:
+                out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=timeout)
+                return json.loads(out)
+        except Exception:
+            pass
+        return {}
+
+def get_snapshot():
+    """Retrieve full Herdr session snapshot."""
+    res = rpc_call("session.snapshot")
+    if "result" in res:
+        return res["result"].get("snapshot", {})
+    return {}
+
+def read_pane_buffer(pane_id, lines=20, strip_ansi=True):
+    """Read recent buffer text for a given pane."""
+    res = rpc_call("pane.read", {
+        "pane_id": pane_id,
+        "source": "recent",
+        "lines": lines,
+        "strip_ansi": strip_ansi
+    })
+    return res.get("result", {}).get("read", {}).get("text", "")
+
+def format_path(path):
+    if not path:
+        return ""
+    if path.startswith(HOME):
+        return "~" + path[len(HOME):]
+    return path
+
+def clean_snippet(text, max_len=180):
+    """Clean and flatten terminal text into a single searchable line."""
+    if not text:
+        return ""
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    joined = " ".join(lines)
+    joined = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", joined)
+    joined = re.sub(r"\s+", " ", joined)
+    return joined[:max_len]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PREVIEW RENDERER
+# ─────────────────────────────────────────────────────────────────────────────
+
+def render_preview(target_token):
+    """Render rich preview for selected item in fzf."""
+    parts = target_token.split("|")
+    if not parts or len(parts) < 2:
+        print(f"{GRAY}No details available for {target_token}{RESET}")
+        return
+
+    kind = parts[0]
+    snapshot = get_snapshot()
+    workspaces = {w["workspace_id"]: w for w in snapshot.get("workspaces", [])}
+    panes_dict = {p["pane_id"]: p for p in snapshot.get("panes", [])}
+    agents_dict = {a["pane_id"]: a for a in snapshot.get("agents", [])}
+
+    if kind in ("agent", "pane"):
+        pane_id = parts[1]
+        ws_id = parts[2] if len(parts) > 2 else ""
+        tab_id = parts[3] if len(parts) > 3 else ""
+        
+        pane = panes_dict.get(pane_id, {})
+        ws = workspaces.get(ws_id or pane.get("workspace_id", ""), {})
+        agent_info = agents_dict.get(pane_id) or ({"agent": pane.get("agent"), "agent_status": pane.get("agent_status")} if pane.get("agent") else None)
+        
+        wt = ws.get("worktree")
+        tokens = ws.get("tokens", {})
+        pr_info = tokens.get("pr_status") or tokens.get("pr_info") or ""
+        pr_title = tokens.get("pr_title") or ""
+        pr_url = tokens.get("pr_url") or ""
+        
+        agent_name = (agent_info.get("agent") if agent_info else None) or "terminal"
+        status = (agent_info.get("agent_status") if agent_info else None) or "active"
+        icon = STATUS_ICONS.get(status, "●")
+        title = pane.get("terminal_title_stripped") or pane.get("terminal_title") or pane.get("label") or "shell"
+        cwd = pane.get("foreground_cwd") or pane.get("cwd") or ws.get("label") or ""
+
+        # Banner
+        badge_color = MAGENTA if agent_info else CYAN
+        badge_name = f"AGENT: {agent_name.upper()}" if agent_info else f"PANE: {pane_id}"
+        print(f"{badge_color}{BOLD}┌── {badge_name} {RESET}{badge_color}{'─' * max(2, 55 - len(badge_name))}┐{RESET}")
+        print(f"{badge_color}│{RESET} {BOLD}Status:{RESET}     {icon} {status:<12} {BOLD}Pane:{RESET} {pane_id} ({tab_id or pane.get('tab_id', '')})")
+        print(f"{badge_color}│{RESET} {BOLD}Workspace:{RESET}  {ws.get('label', ws_id)} {DIM}({ws.get('workspace_id', '')}){RESET}")
+        if wt:
+            print(f"{badge_color}│{RESET} {BOLD}Worktree:{RESET}   {GREEN}{wt.get('repo_name', '')}{RESET} / {YELLOW}{os.path.basename(wt.get('checkout_path', ''))}{RESET}")
+        if pr_info:
+            print(f"{badge_color}│{RESET} {BOLD}PR:{RESET}         {ORANGE}{pr_info}{RESET} {WHITE}{pr_title}{RESET}")
+            if pr_url:
+                print(f"{badge_color}│{RESET} {BOLD}PR URL:{RESET}     {DIM}{pr_url}{RESET}")
+        print(f"{badge_color}│{RESET} {BOLD}Topic/Cmd:{RESET}  {WHITE}{title}{RESET}")
+        print(f"{badge_color}│{RESET} {BOLD}Directory:{RESET}  {CYAN}{format_path(cwd)}{RESET}")
+        print(f"{badge_color}└{'─' * 57}┘{RESET}\n")
+
+        # Live terminal buffer
+        print(f"{GRAY}{BOLD}── LIVE PANE OUTPUT ({pane_id}) ────────────────────────────────{RESET}")
+        buffer_text = read_pane_buffer(pane_id, lines=45, strip_ansi=False)
+        if buffer_text.strip():
+            print(buffer_text)
+        else:
+            print(f"{DIM}(empty or inactive buffer){RESET}")
+
+    elif kind in ("worktree", "workspace"):
+        ws_id = parts[1]
+        ws = workspaces.get(ws_id, {})
+        wt = ws.get("worktree")
+        tokens = ws.get("tokens", {})
+        pr_info = tokens.get("pr_status") or tokens.get("pr_info") or ""
+        pr_title = tokens.get("pr_title") or ""
+        pr_url = tokens.get("pr_url") or ""
+        
+        ws_panes = [p for p in snapshot.get("panes", []) if p.get("workspace_id") == ws_id]
+        ws_agents = [a for a in snapshot.get("agents", []) if a.get("workspace_id") == ws_id]
+        
+        title_badge = f"WORKTREE: {wt.get('repo_name', '')}" if wt else f"WORKSPACE: {ws.get('label', ws_id)}"
+        badge_color = GREEN if wt else CYAN
+        print(f"{badge_color}{BOLD}┌── {title_badge} {RESET}{badge_color}{'─' * max(2, 55 - len(title_badge))}┐{RESET}")
+        print(f"{badge_color}│{RESET} {BOLD}Workspace:{RESET}  {ws.get('label', ws_id)} {DIM}({ws_id}){RESET}")
+        if wt:
+            print(f"{badge_color}│{RESET} {BOLD}Repo Root:{RESET}  {format_path(wt.get('repo_root', ''))}")
+            print(f"{badge_color}│{RESET} {BOLD}Checkout:{RESET}   {format_path(wt.get('checkout_path', ''))}")
+        if pr_info:
+            print(f"{badge_color}│{RESET} {BOLD}PR:{RESET}         {ORANGE}{pr_info}{RESET}")
+            if pr_title:
+                print(f"{badge_color}│{RESET} {BOLD}PR Title:{RESET}   {WHITE}{pr_title}{RESET}")
+            if pr_url:
+                print(f"{badge_color}│{RESET} {BOLD}PR URL:{RESET}     {DIM}{pr_url}{RESET}")
+        print(f"{badge_color}│{RESET} {BOLD}Topology:{RESET}   {ws.get('tab_count', 1)} tabs · {ws.get('pane_count', len(ws_panes))} panes")
+        if ws_agents:
+            ag_str = ", ".join([f"{a.get('agent')} ({STATUS_ICONS.get(a.get('agent_status'), '')} {a.get('agent_status')})" for a in ws_agents])
+            print(f"{badge_color}│{RESET} {BOLD}Agents:{RESET}     {MAGENTA}{ag_str}{RESET}")
+        print(f"{badge_color}└{'─' * 57}┘{RESET}\n")
+
+        # Panes breakdown
+        print(f"{GRAY}{BOLD}── PANES IN WORKSPACE ────────────────────────────────────────{RESET}")
+        for p in ws_panes:
+            pid = p.get("pane_id", "")
+            ag = p.get("agent")
+            p_title = p.get("terminal_title_stripped") or p.get("terminal_title") or p.get("label") or "shell"
+            p_icon = STATUS_ICONS.get(p.get("agent_status", ""), "🖥️")
+            p_tag = f"{MAGENTA}[{ag}]{RESET}" if ag else f"{GRAY}[pane]{RESET}"
+            print(f" {p_icon} {BOLD}{pid:<7}{RESET} {p_tag} {p_title}")
+
+        # Live buffer of active/primary pane
+        if ws_panes:
+            primary_pane = ws_panes[0]
+            for p in ws_panes:
+                if p.get("focused") or p.get("agent"):
+                    primary_pane = p
+                    break
+            pp_id = primary_pane.get("pane_id")
+            print(f"\n{GRAY}{BOLD}── ACTIVE PANE OUTPUT ({pp_id}) ──────────────────────────{RESET}")
+            buf = read_pane_buffer(pp_id, lines=30, strip_ansi=False)
+            if buf.strip():
+                print(buf)
+            else:
+                print(f"{DIM}(empty or inactive buffer){RESET}")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN DATA COLLECTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+def collect_picker_entries(include_pane_content=False):
+    """Gather and format all selectable targets (optionally with buffer snippets)."""
+    snapshot = get_snapshot()
+    if not snapshot:
+        return [], {}
+
+    workspaces = {w["workspace_id"]: w for w in snapshot.get("workspaces", [])}
+    panes = snapshot.get("panes", [])
+    agents = snapshot.get("agents", [])
+
+    pane_snippets = {}
+    if include_pane_content:
+        def fetch_pane_text(p):
+            pid = p["pane_id"]
+            raw = read_pane_buffer(pid, lines=15, strip_ansi=True)
+            return pid, clean_snippet(raw)
+
+        with ThreadPoolExecutor(max_workers=32) as pool:
+            pane_snippets = dict(pool.map(fetch_pane_text, panes))
+
+    agent_pane_ids = set()
+    rows = []
+    actions_map = {}
+
+    # 1. AGENTS
+    for a in agents:
+        pid = a.get("pane_id", "")
+        agent_pane_ids.add(pid)
+        ws_id = a.get("workspace_id", "")
+        tab_id = a.get("tab_id", "")
+        ws = workspaces.get(ws_id, {})
+        agent_name = a.get("agent", "agent")
+        status = a.get("agent_status", "unknown")
+        icon = STATUS_ICONS.get(status, " ")
+        title = a.get("terminal_title_stripped") or a.get("terminal_title") or ""
+        cwd = format_path(a.get("foreground_cwd") or a.get("cwd") or "")
+        ws_label = ws.get("label", ws_id)
+
+        token = f"agent|{pid}|{ws_id}|{tab_id}"
+        badge = f"{MAGENTA}{BOLD}[AGENT]{RESET}"
+        status_col = f"{icon} {status:<8}"
+        scope_col = f"{BOLD}{ws_label}{RESET}"
+        detail_col = f"{CYAN}{agent_name}{RESET} · {WHITE}{title or cwd}{RESET}"
+
+        snippet_col = f"\t{pane_snippets[pid]}" if include_pane_content and pid in pane_snippets else ""
+        rows.append(f"{token}\t{badge}\t{status_col}\t{scope_col}\t{detail_col}{snippet_col}")
+        actions_map[token] = {
+            "type": "agent",
+            "pane_id": pid,
+            "ws_id": ws_id,
+            "tab_id": tab_id,
+            "pr_url": ws.get("tokens", {}).get("pr_url", "")
+        }
+
+    # 2. WORKTREES & WORKSPACES
+    for ws_id, ws in workspaces.items():
+        label = ws.get("label", ws_id)
+        wt = ws.get("worktree")
+        tokens = ws.get("tokens", {})
+        pr_info = tokens.get("pr_status") or tokens.get("pr_info") or ""
+        pr_title = tokens.get("pr_title") or ""
+        pr_url = tokens.get("pr_url") or ""
+        agent_status = ws.get("agent_status", "unknown")
+        icon = STATUS_ICONS.get(agent_status, "📂") if not wt else "🌿"
+
+        ws_pane_list = [p for p in panes if p.get("workspace_id") == ws_id]
+        ws_snippet = ""
+        if include_pane_content:
+            for p in ws_pane_list:
+                if p["pane_id"] in pane_snippets and pane_snippets[p["pane_id"]]:
+                    ws_snippet = pane_snippets[p["pane_id"]]
+                    break
+
+        if wt:
+            token = f"worktree|{ws_id}"
+            badge = f"{GREEN}{BOLD}[WORKTREE]{RESET}"
+            status_col = f"{ORANGE}{pr_info}{RESET}" if pr_info else f"{GREEN}linked{RESET}"
+            repo_name = wt.get("repo_name") or os.path.basename(wt.get("repo_root", ""))
+            branch = os.path.basename(wt.get("checkout_path", ""))
+            scope_col = f"{BOLD}{repo_name}{RESET} / {YELLOW}{branch}{RESET}"
+            pr_suffix = f" · {pr_title}" if pr_title else ""
+            detail_col = f"{DIM}{label} · {ws.get('tab_count', 1)}t {ws.get('pane_count', 1)}p{RESET}{pr_suffix}"
+        else:
+            token = f"workspace|{ws_id}"
+            badge = f"{CYAN}{BOLD}[WORKSPACE]{RESET}"
+            status_col = f"{icon} {agent_status:<8}" if agent_status != "unknown" else f"{GRAY}{ws.get('pane_count', 1)} panes{RESET}"
+            scope_col = f"{BOLD}{label}{RESET}"
+            detail_col = f"{DIM}workspace ({ws_id}) · {ws.get('tab_count', 1)}t {ws.get('pane_count', 1)}p{RESET}"
+
+        snippet_col = f"\t{ws_snippet}" if include_pane_content and ws_snippet else ""
+        rows.append(f"{token}\t{badge}\t{status_col}\t{scope_col}\t{detail_col}{snippet_col}")
+        actions_map[token] = {
+            "type": "workspace",
+            "ws_id": ws_id,
+            "pr_url": pr_url
+        }
+
+    # 3. PANES (Non-Agent Terminals, Editors, Servers)
+    for p in panes:
+        pid = p.get("pane_id", "")
+        if pid in agent_pane_ids:
+            continue  # Already represented under [AGENT]
+
+        ws_id = p.get("workspace_id", "")
+        tab_id = p.get("tab_id", "")
+        ws = workspaces.get(ws_id, {})
+        ws_label = ws.get("label", ws_id)
+        title = p.get("terminal_title_stripped") or p.get("terminal_title") or p.get("label") or "shell"
+        cwd = format_path(p.get("foreground_cwd") or p.get("cwd") or "")
+
+        token = f"pane|{pid}|{ws_id}|{tab_id}"
+        badge = f"{GRAY}{BOLD}[PANE]{RESET}"
+        status_col = f"🖥️  {p.get('label') or 'shell':<8}"
+        scope_col = f"{ws_label} › {tab_id}"
+        detail_col = f"{WHITE}{title}{RESET} {DIM}({cwd}){RESET}"
+
+        snippet_col = f"\t{pane_snippets[pid]}" if include_pane_content and pid in pane_snippets else ""
+        rows.append(f"{token}\t{badge}\t{status_col}\t{scope_col}\t{detail_col}{snippet_col}")
+        actions_map[token] = {
+            "type": "pane",
+            "pane_id": pid,
+            "ws_id": ws_id,
+            "tab_id": tab_id,
+            "pr_url": ws.get("tokens", {}).get("pr_url", "")
+        }
+
+    return rows, actions_map
+
+def execute_action(action_data, key):
+    """Perform focus or secondary action (e.g. open PR / close pane)."""
+    if not action_data:
+        return
+
+    act_type = action_data.get("type")
+    pr_url = action_data.get("pr_url", "")
+
+    if key == "ctrl-o":
+        if pr_url:
+            subprocess.run(["open", pr_url])
+        return
+
+    if key == "ctrl-k":
+        if act_type in ("agent", "pane"):
+            subprocess.run(["herdr", "pane", "close", action_data["pane_id"]])
+        elif act_type == "workspace":
+            subprocess.run(["herdr", "workspace", "close", action_data["ws_id"]])
+        return
+
+    # Default action: Jump / Focus
+    if act_type == "agent":
+        pane_id = action_data["pane_id"]
+        res = subprocess.run(["herdr", "agent", "focus", pane_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if res.returncode != 0:
+            if action_data.get("ws_id"):
+                subprocess.run(["herdr", "workspace", "focus", action_data["ws_id"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if action_data.get("tab_id"):
+                subprocess.run(["herdr", "tab", "focus", action_data["tab_id"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    elif act_type == "workspace":
+        ws_id = action_data["ws_id"]
+        subprocess.run(["herdr", "workspace", "focus", ws_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    elif act_type == "pane":
+        ws_id = action_data.get("ws_id")
+        tab_id = action_data.get("tab_id")
+        if ws_id:
+            subprocess.run(["herdr", "workspace", "focus", ws_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if tab_id:
+            subprocess.run(["herdr", "tab", "focus", tab_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main():
+    if len(sys.argv) >= 3 and sys.argv[1] == "--preview":
+        render_preview(sys.argv[2])
+        return
+
+    include_content = "--content" in sys.argv or "-c" in sys.argv
+
+    if len(sys.argv) >= 2 and sys.argv[1] == "--raw-list":
+        rows, _ = collect_picker_entries(include_pane_content=include_content)
+        if rows:
+            print("\n".join(rows))
+        return
+
+    rows, actions_map = collect_picker_entries(include_pane_content=include_content)
+    if not rows:
+        print("Error: Could not retrieve sessions from Herdr.")
+        sys.exit(1)
+
+    input_data = "\n".join(rows)
+    script_path = os.path.abspath(__file__)
+
+    header = "Enter: Focus  │  Ctrl-A: @Agents  │  Ctrl-W: @Worktrees  │  Ctrl-P: @Panes  │  Ctrl-T: Deep Search  │  Ctrl-E: Reset"
+    prompt = "Herdr > " if not include_content else "Buffer Text > "
+
+    fzf_cmd = [
+        "fzf",
+        "--ansi",
+        "--delimiter=\t",
+        "--with-nth=2..",
+        f"--preview={script_path} --preview {{1}}",
+        "--preview-window=right:52%:wrap:border-left",
+        f"--header={header}",
+        f"--prompt={prompt}",
+        "--reverse",
+        "--no-sort",
+        "--height=100%",
+        "--bind=ctrl-a:change-prompt(Agents > )+change-query(AGENT )",
+        "--bind=ctrl-w:change-prompt(Worktrees > )+change-query(WORKTREE )",
+        "--bind=ctrl-p:change-prompt(Panes > )+change-query(PANE )",
+        f"--bind=ctrl-t:change-prompt(Buffer Text > )+reload({script_path} --raw-list --content)+clear-query",
+        f"--bind=ctrl-e:change-prompt(Herdr > )+reload({script_path} --raw-list)+clear-query",
+        f"--bind=ctrl-r:reload({script_path} --raw-list{' --content' if include_content else ''})",
+        "--bind=ctrl-u:preview-page-up,ctrl-d:preview-page-down,ctrl-/:toggle-preview",
+        "--expect=ctrl-k,ctrl-o"
+    ]
+
+    try:
+        proc = subprocess.Popen(
+            fzf_cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            text=True
+        )
+        stdout, _ = proc.communicate(input=input_data)
+    except FileNotFoundError:
+        print("fzf is required but not found in PATH.")
+        sys.exit(1)
+
+    if proc.returncode != 0 or not stdout.strip():
+        sys.exit(0)
+
+    lines = stdout.strip().split("\n")
+    if len(lines) == 1:
+        key = ""
+        selected = lines[0]
+    else:
+        key = lines[0]
+        selected = lines[1]
+
+    if not selected:
+        sys.exit(0)
+
+    token = selected.split("\t")[0].strip()
+    action_data = actions_map.get(token)
+    execute_action(action_data, key)
+
+if __name__ == "__main__":
+    main()

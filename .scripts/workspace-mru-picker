@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""
+Herdr Workspace MRU Picker
+Brings up a popup window to switch Herdr workspaces ordered by recency (MRU).
+Most recent workspaces are displayed at the bottom, pre-selected.
+Navigate with Ctrl-n / Ctrl-p (or j/k, Up/Down), filter by typing, press Enter to focus.
+"""
+
+import sys
+import os
+import json
+import subprocess
+from pathlib import Path
+
+CACHE_DIR = Path.home() / ".cache" / "herdr-picker"
+MRU_FILE = CACHE_DIR / "workspace_mru.json"
+
+def load_mru():
+    if MRU_FILE.exists():
+        try:
+            with open(MRU_FILE, "r") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception:
+            pass
+    return []
+
+def save_mru(mru_list):
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(MRU_FILE, "w") as f:
+            json.dump(mru_list, f)
+    except Exception:
+        pass
+
+def get_herdr_snapshot():
+    try:
+        out = subprocess.check_output(["herdr", "api", "snapshot"], stderr=subprocess.DEVNULL, text=True)
+        data = json.loads(out)
+        if data.get("type") == "session_snapshot":
+            return data.get("result", {}).get("snapshot", {})
+        elif "result" in data and "snapshot" in data["result"]:
+            return data["result"]["snapshot"]
+    except Exception:
+        pass
+    return None
+
+def main():
+    snapshot = get_herdr_snapshot()
+    if not snapshot:
+        print("Error: Could not connect to Herdr session.")
+        sys.exit(1)
+
+    workspaces = snapshot.get("workspaces", [])
+    if not workspaces:
+        print("No active workspaces in Herdr.")
+        sys.exit(0)
+
+    focused_id = snapshot.get("focused_workspace_id") or os.environ.get("HERDR_ACTIVE_WORKSPACE_ID")
+
+    # Load and update MRU history
+    mru_history = load_mru()
+    valid_ids = {w["workspace_id"] for w in workspaces}
+    
+    # Filter out closed workspaces from history
+    mru_history = [wid for wid in mru_history if wid in valid_ids]
+    
+    # Ensure current focused workspace is recorded at the top of history
+    if focused_id and focused_id in valid_ids:
+        if focused_id in mru_history:
+            mru_history.remove(focused_id)
+        mru_history.insert(0, focused_id)
+
+    # Any workspaces not in history get appended
+    for w in workspaces:
+        wid = w["workspace_id"]
+        if wid not in mru_history:
+            mru_history.append(wid)
+
+    save_mru(mru_history)
+
+    # Build workspace lookup
+    ws_map = {w["workspace_id"]: w for w in workspaces}
+
+    # Order workspaces by recency:
+    # mru_history[0] is current, mru_history[1] is previous (most recent target), etc.
+    # To place most recent at the bottom in default fzf layout:
+    # First item fed to fzf appears at the bottom.
+    # We want:
+    # - Line 1 (bottom): Previous workspace (mru_history[1] or mru_history[0] if only 1 exists)
+    # - Line 2 (above it): 2nd previous (mru_history[2])
+    # - ...
+    # - Line N (top): Current workspace (or least recent)
+    
+    sorted_wids = []
+    if len(mru_history) > 1 and focused_id:
+        # Put previous workspace first, followed by older ones, and current at the very end
+        other_wids = [wid for wid in mru_history if wid != focused_id]
+        sorted_wids = other_wids + [focused_id]
+    else:
+        sorted_wids = list(mru_history)
+
+    status_icons = {
+        "working": "⏳",
+        "idle": "💤",
+        "done": "✅",
+        "blocked": "⚠️",
+        "unknown": "  "
+    }
+
+    home = os.path.expanduser("~")
+    rows = []
+
+    for wid in sorted_wids:
+        w = ws_map.get(wid)
+        if not w:
+            continue
+
+        label = w.get("label", wid)
+        num = w.get("number", 0)
+        is_focused = (wid == focused_id)
+        agent_st = w.get("agent_status", "unknown")
+        icon = status_icons.get(agent_st, "  ")
+
+        tokens = w.get("tokens", {})
+        pr_info = tokens.get("pr_status") or tokens.get("pr_info") or ""
+
+        wt = w.get("worktree", {})
+        path = wt.get("checkout_path", "")
+        if path.startswith(home):
+            path = "~" + path[len(home):]
+
+        num_str = f"[{num:>2}]"
+        curr_str = " (current)" if is_focused else ""
+        pr_display = f"{pr_info:<16}" if pr_info else " " * 16
+
+        # Format: <wid>\t<display>
+        display = f"{num_str} {icon}  {label:<32}{curr_str:<11} │ {pr_display} │ {path}"
+        rows.append(f"{wid}\t{display}")
+
+    input_data = "\n".join(rows)
+
+    header = " Herdr Workspaces (MRU) │ ENTER: switch │ C-n/C-p/j/k: cycle │ ESC: close"
+    prompt = " Workspace > "
+
+    fzf_cmd = [
+        "fzf",
+        "--delimiter=\t",
+        "--with-nth=2..",
+        f"--header={header}",
+        f"--prompt={prompt}",
+        "--no-sort",
+        "--cycle",
+        "--height=100%",
+        "--layout=default",
+        "--color=bg+:#283457,bg:#1f2335,spinner:#7dcfff,hl:#565f89,fg:#c0caf5,header:#7aa2f7,info:#7aa2f7,pointer:#7dcfff,marker:#7dcfff,fg+:#c0caf5,prompt:#bb9af7,hl+:#7dcfff",
+        "--bind=ctrl-n:down,ctrl-p:up,ctrl-j:down,ctrl-k:up,j:down,k:up"
+    ]
+
+    try:
+        proc = subprocess.Popen(
+            fzf_cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            text=True
+        )
+        stdout, _ = proc.communicate(input=input_data)
+    except FileNotFoundError:
+        print("fzf is required but not found in PATH.")
+        sys.exit(1)
+
+    if proc.returncode != 0 or not stdout.strip():
+        sys.exit(0)
+
+    selected_line = stdout.strip()
+    selected_wid = selected_line.split("\t")[0].strip()
+
+    if selected_wid:
+        # Update MRU history so selected becomes top
+        if selected_wid in mru_history:
+            mru_history.remove(selected_wid)
+        mru_history.insert(0, selected_wid)
+        save_mru(mru_history)
+
+        # Focus the workspace in Herdr
+        subprocess.run(["herdr", "workspace", "focus", selected_wid])
+
+if __name__ == "__main__":
+    main()

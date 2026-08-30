@@ -52,6 +52,32 @@ map('n', '<leader>P', '<cmd>Telescope commands<cr>', { desc = 'Command palette (
 map('n', '<leader>[', '<C-o>', { desc = 'Go back' })
 map('n', '<leader>]', '<C-i>', { desc = 'Go forward' })
 
+-- Reload Neovim configuration
+local function reload_config()
+  for name, _ in pairs(package.loaded) do
+    if name:match('^config') or name:match('^plugins') or name:match('^lsp') then
+      package.loaded[name] = nil
+    end
+  end
+
+  require('config.options')
+  require('config.keymaps')
+  require('config.autocmds')
+  pcall(require, 'config.ui')
+  pcall(require, 'config.commands')
+
+  -- Re-source plugin specs so new keymaps/specs take effect immediately
+  local specs_path = vim.fn.stdpath('config') .. '/lua/plugins/specs'
+  for _, file in ipairs(vim.fn.glob(specs_path .. '/*.lua', true, true)) do
+    pcall(dofile, file)
+  end
+
+  vim.notify('Neovim configuration reloaded!', vim.log.levels.INFO, { title = 'Config Reload' })
+end
+
+map('n', '<leader>so', reload_config, { desc = '[S]ource/[O]verhaul config reload' })
+map('n', '<leader>R', reload_config, { desc = '[R]eload Neovim config' })
+
 -- Terminal toggle function
 local terminal_buf = nil
 local terminal_win = nil

@@ -33,7 +33,7 @@ rename_tab = "prefix+comma"          # tmux: rename-window
 close_tab = "prefix+ampersand"       # tmux: bind & confirm-before kill-window
 
 # ── Panes ────────────────────────────────────────────────────────────────────
-split_vertical = ["prefix+|", "prefix+v"]   # tmux: bind | split-window -h
+split_vertical = "prefix+|"                 # tmux: bind | split-window -h
 split_horizontal = "prefix+minus"           # tmux: bind - split-window -v
 close_pane = "prefix+x"                     # tmux: kill-pane
 zoom = "prefix+z"                           # tmux: resize-pane -Z
@@ -55,7 +55,7 @@ resize_mode = "prefix+alt+r"
 
 # ── Workspaces (tmux sessions) ───────────────────────────────────────────────
 # tmux: @sessionx-bind 'f', choose-tree (w), choose-tree -s (s)
-workspace_picker = ["prefix+f", "prefix+w", "prefix+s"]
+workspace_picker = "prefix+f"
 new_workspace = "prefix+shift+n"
 rename_workspace = "prefix+shift+w"
 close_workspace = "prefix+shift+d"
@@ -166,11 +166,45 @@ description = "idle session picker"
 width = "75%"
 height = "40%"
 
+# Workspace MRU Picker (recency-ordered with Ctrl-n/Ctrl-p, most recent at bottom)
+[[keys.command]]
+key = "prefix+w"
+type = "popup"
+command = "~/.dotfiles/.scripts/workspace-mru-picker"
+description = "workspace MRU picker"
+width = "85%"
+height = "60%"
+
+# Workspace & Worktree Tree Picker (collapsible tree with h/l, j/k)
+[[keys.command]]
+key = "prefix+s"
+type = "popup"
+command = "~/.dotfiles/.scripts/workspace-tree-picker"
+description = "workspace tree picker"
+width = "80%"
+height = "60%"
+
+# Fuzzy picker across agents, worktrees, panes, and visible buffer text
 [[keys.command]]
 key = "prefix+t"
+type = "popup"
+command = "~/.dotfiles/.scripts/herdr-fuzzy-picker"
+description = "fuzzy picker (agents, worktrees, panes)"
+width = "90%"
+height = "85%"
+
+# Switch to existing vim tab or create new vim tab with nvim
+[[keys.command]]
+key = "prefix+v"
+type = "shell"
+command = "~/.dotfiles/.scripts/herdr-vim-tab"
+description = "switch to or create vim tab"
+
+[[keys.command]]
+key = "prefix+alt+p"
 type = "plugin_action"
-command = "herdr-navigator.open"
-description = "jump to anything"
+command = "danielb.pr-status.toggle"
+description = "toggle PR status display"
 
 [[keys.command]]
 key = "prefix+alt+o"
@@ -179,7 +213,7 @@ command = "danielb.pr-status.open-pr"
 description = "open workspace PR in browser"
 
 [[keys.command]]
-key = "prefix+alt+p"
+key = "prefix+alt+l"
 type = "plugin_action"
 command = "danielb.pr-status.view-prs"
 description = "list repo open PRs"
@@ -192,20 +226,28 @@ mouse_capture = true
 copy_on_select = true
 accent = "#7aa2f7"
 
-[ui.sidebar.spaces]
+pane_gaps = false
+# pane_outer_borders = false
+
+[ui.sidebar.agents]
+row_gap = 0
 rows = [
-  [
-    "state_icon",
-    { token = "$pr_approved", fg = "#50fa7b", bold = true },
-    { token = "$pr_changes", fg = "#ff5555", bold = true },
-    { token = "$pr_review", fg = "#ffb86c", bold = true },
-    { token = "$pr_draft", fg = "#6272a4", dim = true },
-    "workspace"
-  ],
-  ["branch", "git_status"]
+  ["state_icon", "workspace", "tab"],
+  ["agent"],
 ]
 
-
+[ui.sidebar.spaces]
+rows = [
+  ["state_icon", "workspace"],
+  ["branch", "git_status"],
+  [
+    { token = "$pr_number", fg = "#7aa2f7" },
+    { token = "$pr_approved", fg = "#50fa7b" },
+    { token = "$pr_changes", fg = "#ff5555" },
+    { token = "$pr_review", fg = "#ffb86c" },
+    { token = "$pr_draft", fg = "#6272a4", dim = true }
+  ]
+]
 
 [experimental]
 pane_history = true

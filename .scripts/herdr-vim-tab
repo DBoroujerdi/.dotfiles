@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""
+Herdr Vim Tab:
+Switches to an existing tab named "vim" in the current workspace,
+or creates a new tab named "vim" and launches nvim in the current working directory.
+"""
+
+import json
+import os
+import subprocess
+import sys
+
+
+def get_current_info():
+    ws_id = os.environ.get("HERDR_ACTIVE_WORKSPACE_ID") or os.environ.get("HERDR_WORKSPACE_ID")
+    cwd = os.environ.get("HERDR_ACTIVE_PANE_CWD")
+
+    if not ws_id or not cwd:
+        try:
+            out = subprocess.check_output(["herdr", "pane", "current"], stderr=subprocess.DEVNULL, text=True)
+            data = json.loads(out)
+            pane = data.get("result", {}).get("pane", {})
+            if not ws_id:
+                ws_id = pane.get("workspace_id")
+            if not cwd:
+                cwd = pane.get("foreground_cwd") or pane.get("cwd")
+        except Exception:
+            pass
+
+    if not cwd:
+        cwd = os.getcwd()
+
+    return ws_id, cwd
+
+
+def main():
+    ws_id, cwd = get_current_info()
+    if not ws_id:
+        print("Error: Could not determine current Herdr workspace.", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        tabs_raw = subprocess.check_output(
+            ["herdr", "tab", "list", "--workspace", ws_id],
+            stderr=subprocess.DEVNULL,
+            text=True
+        )
+        tabs_data = json.loads(tabs_raw)
+        tabs = tabs_data.get("result", {}).get("tabs", [])
+    except Exception as e:
+        print(f"Error listing tabs for workspace {ws_id}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Check if a tab named 'vim' exists in the current workspace (case-insensitive)
+    vim_tab = next((t for t in tabs if t.get("label", "").lower() == "vim"), None)
+
+    if vim_tab:
+        tab_id = vim_tab["tab_id"]
+        subprocess.check_call(["herdr", "tab", "focus", tab_id])
+    else:
+        create_args = [
+            "herdr", "tab", "create",
+            "--workspace", ws_id,
+            "--label", "vim",
+            "--cwd", cwd,
+            "--focus"
+        ]
+        try:
+            create_raw = subprocess.check_output(create_args, stderr=subprocess.DEVNULL, text=True)
+            create_data = json.loads(create_raw)
+            root_pane_id = create_data.get("result", {}).get("root_pane", {}).get("pane_id")
+            if root_pane_id:
+                subprocess.check_call(["herdr", "pane", "run", root_pane_id, "nvim ."])
+        except Exception as e:
+            print(f"Error creating vim tab: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

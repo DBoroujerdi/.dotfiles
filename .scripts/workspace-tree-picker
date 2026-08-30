@@ -1,0 +1,347 @@
+#!/usr/bin/env python3
+"""
+Herdr Workspace & Worktree Tree Picker
+A collapsible tree picker for Herdr workspaces grouped by repository.
+Supports j/k navigation, h/l for collapse/expand, search filtering, and instant switching.
+"""
+
+import sys
+import os
+import json
+import curses
+import subprocess
+from pathlib import Path
+
+CACHE_DIR = Path.home() / ".cache" / "herdr-picker"
+COLLAPSE_STATE_FILE = CACHE_DIR / "collapsed.json"
+
+def load_collapsed_state():
+    if COLLAPSE_STATE_FILE.exists():
+        try:
+            with open(COLLAPSE_STATE_FILE, "r") as f:
+                return set(json.load(f))
+        except Exception:
+            pass
+    return set()
+
+def save_collapsed_state(collapsed_set):
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(COLLAPSE_STATE_FILE, "w") as f:
+            json.dump(list(collapsed_set), f)
+    except Exception:
+        pass
+
+def get_herdr_data():
+    try:
+        out = subprocess.check_output(["herdr", "api", "snapshot"], stderr=subprocess.DEVNULL, text=True)
+        data = json.loads(out)
+        if data.get("type") == "session_snapshot":
+            return data.get("result", {}).get("snapshot", {})
+        elif "result" in data and "snapshot" in data["result"]:
+            return data["result"]["snapshot"]
+    except Exception:
+        pass
+    return None
+
+def build_tree_data(snapshot):
+    workspaces = snapshot.get("workspaces", [])
+    panes = snapshot.get("panes", [])
+
+    ws_panes = {}
+    for p in panes:
+        wid = p.get("workspace_id")
+        if wid not in ws_panes:
+            ws_panes[wid] = []
+        ws_panes[wid].append(p)
+
+    # Group workspaces by repo
+    repo_groups = {}  # repo_name -> list of ws_item
+    standalone = []
+
+    for ws in workspaces:
+        ws_id = ws["workspace_id"]
+        label = ws.get("label", ws_id)
+        focused = ws.get("focused", False)
+        agent_status = ws.get("agent_status", "unknown")
+        tokens = ws.get("tokens", {})
+        pr_info = tokens.get("pr_status") or tokens.get("pr_info") or ""
+
+        wt = ws.get("worktree")
+        repo_name = None
+        branch = None
+
+        if wt:
+            repo_name = wt.get("repo_name")
+            if not repo_name and wt.get("repo_root"):
+                repo_name = os.path.basename(wt["repo_root"])
+
+        if not repo_name and ws_id in ws_panes:
+            for p in ws_panes[ws_id]:
+                cwd = p.get("foreground_cwd") or p.get("cwd")
+                if cwd and os.path.exists(cwd):
+                    try:
+                        top = subprocess.check_output(
+                            ["git", "-C", cwd, "rev-parse", "--show-toplevel"],
+                            stderr=subprocess.DEVNULL,
+                            text=True
+                        ).strip()
+                        if top:
+                            repo_name = os.path.basename(top)
+                            break
+                    except Exception:
+                        pass
+
+        item = {
+            "ws_id": ws_id,
+            "label": label,
+            "repo_name": repo_name,
+            "focused": focused,
+            "agent_status": agent_status,
+            "pr_info": pr_info,
+            "is_worktree": wt is not None
+        }
+
+        if repo_name:
+            repo_groups.setdefault(repo_name, []).append(item)
+        else:
+            standalone.append(item)
+
+    # Build sections
+    sections = []
+    for r_name in sorted(repo_groups.keys(), key=lambda x: x.lower()):
+        sections.append({
+            "key": f"repo:{r_name}",
+            "title": r_name,
+            "type": "repo",
+            "items": repo_groups[r_name]
+        })
+
+    if standalone:
+        sections.append({
+            "key": "standalone:other",
+            "title": "Standalone Workspaces",
+            "type": "standalone",
+            "items": standalone
+        })
+
+    return sections
+
+def run_picker(stdscr):
+    curses.curs_set(0)
+    curses.use_default_colors()
+    stdscr.keypad(True)
+    stdscr.timeout(-1)
+
+    # Color pairs
+    curses.init_pair(1, curses.COLOR_CYAN, -1)     # Accent / Repo title
+    curses.init_pair(2, curses.COLOR_GREEN, -1)    # Approved / Idle
+    curses.init_pair(3, curses.COLOR_YELLOW, -1)   # Working / Review
+    curses.init_pair(4, curses.COLOR_RED, -1)      # Changes / Blocked
+    curses.init_pair(5, curses.COLOR_MAGENTA, -1)  # Focus marker
+    curses.init_pair(6, curses.COLOR_WHITE, curses.COLOR_BLUE)  # Selected row highlight
+    curses.init_pair(7, 8, -1)                     # Dim / Gray (color 8 or fallback)
+
+    snapshot = get_herdr_data()
+    if not snapshot:
+        stdscr.addstr(1, 2, "Error: Could not retrieve Herdr session state. Press any key to exit.")
+        stdscr.getch()
+        return
+
+    sections = build_tree_data(snapshot)
+    collapsed = load_collapsed_state()
+
+    cursor_idx = 0
+    filter_text = ""
+    in_search = False
+
+    while True:
+        # Flatten tree items based on collapse state and filter
+        flat_lines = []  # list of (type, data, section_key, is_header)
+
+        for sec in sections:
+            sec_key = sec["key"]
+            sec_title = sec["title"]
+            items = sec["items"]
+            is_collapsed = sec_key in collapsed
+
+            # Filter items if query active
+            matching_items = []
+            if filter_text:
+                q = filter_text.lower()
+                for it in items:
+                    if q in it["label"].lower() or q in sec_title.lower() or q in it["pr_info"].lower():
+                        matching_items.append(it)
+            else:
+                matching_items = items
+
+            if filter_text and not matching_items:
+                continue
+
+            # Header row
+            flat_lines.append(("header", {
+                "title": sec_title,
+                "count": len(items),
+                "collapsed": is_collapsed,
+                "key": sec_key
+            }, sec_key, True))
+
+            # Child rows (if not collapsed or in search mode)
+            if not is_collapsed or filter_text:
+                for it in matching_items:
+                    flat_lines.append(("workspace", it, sec_key, False))
+
+        if not flat_lines:
+            flat_lines.append(("empty", {"title": "No matching workspaces found"}, "", False))
+
+        # Clamp cursor
+        if cursor_idx >= len(flat_lines):
+            cursor_idx = max(0, len(flat_lines) - 1)
+        if cursor_idx < 0:
+            cursor_idx = 0
+
+        # Draw UI
+        stdscr.erase()
+        max_y, max_x = stdscr.getmaxyx()
+
+        # Header bar
+        header = "  HERDR WORKSPACES & WORKTREES"
+        search_prompt = f"  Search: {filter_text}█" if in_search else ("  [/] Search  [h] Collapse  [l] Expand  [Enter] Select  [q] Quit")
+        try:
+            stdscr.addstr(0, 0, header.ljust(max_x - 1)[:max_x - 1], curses.color_pair(1) | curses.A_BOLD)
+            stdscr.addstr(max_y - 1, 0, search_prompt.ljust(max_x - 1)[:max_x - 1], curses.A_REVERSE if in_search else curses.color_pair(7))
+        except curses.error:
+            pass
+
+        # Content lines
+        visible_lines = max_y - 2
+        scroll_top = 0
+        if cursor_idx >= visible_lines:
+            scroll_top = cursor_idx - visible_lines + 1
+
+        for screen_y, line_idx in enumerate(range(scroll_top, min(len(flat_lines), scroll_top + visible_lines)), start=1):
+            line_type, line_data, sec_key, is_header = flat_lines[line_idx]
+            is_selected = (line_idx == cursor_idx)
+
+            row_text = ""
+            style = curses.A_NORMAL
+
+            if is_selected:
+                style = curses.color_pair(6) | curses.A_BOLD
+
+            if line_type == "header":
+                icon = "▸" if line_data["collapsed"] and not filter_text else "▾"
+                cnt = line_data["count"]
+                row_text = f" {icon} {line_data['title']} ({cnt} worktrees)" if cnt != 1 else f" {icon} {line_data['title']} (1 worktree)"
+                if not is_selected:
+                    style = curses.color_pair(1) | curses.A_BOLD
+
+            elif line_type == "workspace":
+                ws = line_data
+                focused_mark = "● " if ws["focused"] else "  "
+                agent_icon = "💤 " if ws["agent_status"] == "idle" else ("⏳ " if ws["agent_status"] == "working" else "  ")
+                pr = f"  {ws['pr_info']}" if ws["pr_info"] else ""
+                row_text = f"    {focused_mark}{agent_icon}{ws['label']}{pr}"
+                if not is_selected:
+                    if "APPROVED" in ws["pr_info"] or "approved" in ws["pr_info"]:
+                        style = curses.color_pair(2)
+                    elif "CHANGES" in ws["pr_info"] or "changes" in ws["pr_info"]:
+                        style = curses.color_pair(4)
+                    elif "review" in ws["pr_info"]:
+                        style = curses.color_pair(3)
+
+            elif line_type == "empty":
+                row_text = f"  {line_data['title']}"
+                style = curses.color_pair(7)
+
+            try:
+                padded = row_text.ljust(max_x - 1)[:max_x - 1]
+                stdscr.addstr(screen_y, 0, padded, style)
+            except curses.error:
+                pass
+
+        stdscr.refresh()
+
+        # Handle input
+        ch = stdscr.getch()
+
+        if in_search:
+            if ch in (10, 13):  # Enter
+                in_search = False
+            elif ch == 27:  # Esc
+                in_search = False
+                filter_text = ""
+            elif ch in (curses.KEY_BACKSPACE, 127, 8):
+                filter_text = filter_text[:-1]
+            elif 32 <= ch <= 126:
+                filter_text += chr(ch)
+            continue
+
+        if ch in (ord('q'), 27):  # 'q' or Esc
+            break
+
+        elif ch == ord('/'):
+            in_search = True
+
+        elif ch in (curses.KEY_DOWN, ord('j')):
+            cursor_idx = min(len(flat_lines) - 1, cursor_idx + 1)
+
+        elif ch in (curses.KEY_UP, ord('k')):
+            cursor_idx = max(0, cursor_idx - 1)
+
+        elif ch in (curses.KEY_LEFT, ord('h')):
+            # Collapse section
+            if flat_lines:
+                curr_type, curr_data, curr_sec, is_head = flat_lines[cursor_idx]
+                if is_head:
+                    collapsed.add(curr_sec)
+                else:
+                    # If on a child item, jump to header and collapse
+                    collapsed.add(curr_sec)
+                    for i, (l_type, l_data, l_sec, l_head) in enumerate(flat_lines):
+                        if l_sec == curr_sec and l_head:
+                            cursor_idx = i
+                            break
+                save_collapsed_state(collapsed)
+
+        elif ch in (curses.KEY_RIGHT, ord('l')):
+            # Expand section
+            if flat_lines:
+                curr_type, curr_data, curr_sec, is_head = flat_lines[cursor_idx]
+                if curr_sec in collapsed:
+                    collapsed.remove(curr_sec)
+                    save_collapsed_state(collapsed)
+
+        elif ch == ord('H'):
+            # Collapse all
+            for sec in sections:
+                collapsed.add(sec["key"])
+            save_collapsed_state(collapsed)
+
+        elif ch == ord('L'):
+            # Expand all
+            collapsed.clear()
+            save_collapsed_state(collapsed)
+
+        elif ch in (10, 13, ord(' ')):  # Enter or Space
+            if flat_lines:
+                curr_type, curr_data, curr_sec, is_head = flat_lines[cursor_idx]
+                if is_head:
+                    if curr_sec in collapsed:
+                        collapsed.remove(curr_sec)
+                    else:
+                        collapsed.add(curr_sec)
+                    save_collapsed_state(collapsed)
+                elif curr_type == "workspace":
+                    ws_id = curr_data["ws_id"]
+                    try:
+                        subprocess.run(["herdr", "workspace", "focus", ws_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+                    break
+
+def main():
+    curses.wrapper(run_picker)
+
+if __name__ == "__main__":
+    main()
