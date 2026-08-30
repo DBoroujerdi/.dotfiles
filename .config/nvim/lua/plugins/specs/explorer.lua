@@ -11,7 +11,7 @@ return {
       vim.api.nvim_create_augroup('FileExplorer', { clear = true })
     end,
     keys = {
-      { '<C-n>', ':NvimTreeToggle<CR>' },
+      { '<C-n>', '<cmd>NvimTreeFindFileToggle<CR>', desc = 'Toggle file tree on current file' },
     },
     config = function()
       local api = require 'nvim-tree.api'
@@ -19,6 +19,10 @@ return {
       require('nvim-tree').setup {
         hijack_cursor = true,
         disable_netrw = true,
+        update_focused_file = {
+          enable = true,
+          update_root = false,
+        },
         view = {
           adaptive_size = true,
           float = {
