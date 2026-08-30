@@ -43,6 +43,24 @@ return {
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
       
+      local function get_visual_selection()
+        local saved_reg = vim.fn.getreg 'v'
+        local saved_regtype = vim.fn.getregtype 'v'
+        vim.cmd [[noautocmd silent normal! "vy]]
+        local selection = vim.fn.getreg 'v'
+        local regtype = vim.fn.getregtype 'v'
+        vim.fn.setreg('v', saved_reg, saved_regtype)
+        selection = selection:gsub('\r\n', '\n'):gsub('\r', '\n')
+        if regtype == 'V' then
+          selection = selection:gsub('\n$', '')
+          selection = selection:match '^%s*(.-)%s*$' or selection
+        else
+          selection = selection:gsub('\n$', '')
+          selection = selection:gsub('\n', ' ')
+        end
+        return selection
+      end
+
       -- Telescope keymaps
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
@@ -50,8 +68,12 @@ return {
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>p', builtin.find_files, {})
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
-      vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord / Selection' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      vim.keymap.set('v', '<leader>sg', function()
+        local text = get_visual_selection()
+        builtin.live_grep { default_text = text ~= '' and text or nil }
+      end, { desc = '[S]earch by [G]rep (visual selection)' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
@@ -78,6 +100,14 @@ return {
           previewer = false,
         })
       end, { desc = '[/] Fuzzily search in current buffer' })
+      vim.keymap.set('v', '<leader>/', function()
+        local text = get_visual_selection()
+        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+          winblend = 10,
+          previewer = false,
+          default_text = text ~= '' and text or nil,
+        })
+      end, { desc = '[/] Fuzzily search in current buffer (visual selection)' })
       
       -- Search in open files
       vim.keymap.set('n', '<leader>s/', function()
@@ -86,6 +116,14 @@ return {
           prompt_title = 'Live Grep in Open Files',
         }
       end, { desc = '[S]earch [/] in Open Files' })
+      vim.keymap.set('v', '<leader>s/', function()
+        local text = get_visual_selection()
+        builtin.live_grep {
+          grep_open_files = true,
+          prompt_title = 'Live Grep in Open Files',
+          default_text = text ~= '' and text or nil,
+        }
+      end, { desc = '[S]earch [/] in Open Files (visual selection)' })
       
       -- Search neovim config files
       vim.keymap.set('n', '<leader>sn', function()
