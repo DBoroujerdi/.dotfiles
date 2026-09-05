@@ -35,6 +35,60 @@ map('n', '<leader>o', ':only<cr>', { desc = 'Close other windows' })
 map('v', 'J', ":m '>+1<CR>gv=gv", { desc = 'Move highlighted line(s) down' })
 map('v', 'K', ":m '<-2<CR>gv=gv", { desc = 'Move highlighted line(s) up' })
 
+-- Copy code reference / markdown snippet for agent chats & clipboard
+local function copy_code_reference(opts)
+  opts = opts or {}
+  local mode = vim.fn.mode()
+  local start_line, end_line
+
+  if mode:match('[vV\22]') then
+    start_line = vim.fn.line('v')
+    end_line = vim.fn.line('.')
+    if start_line > end_line then
+      start_line, end_line = end_line, start_line
+    end
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
+  else
+    start_line = vim.fn.line('.')
+    end_line = start_line
+  end
+
+  local filepath = vim.fn.expand('%:.')
+  if filepath == '' then
+    vim.notify('No file associated with buffer', vim.log.levels.WARN, { title = 'Code Reference' })
+    return
+  end
+
+  local line_range = (start_line == end_line) and tostring(start_line) or string.format('%d-%d', start_line, end_line)
+
+  local result
+  if opts.markdown then
+    local ft = vim.bo.filetype
+    local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+    local code = table.concat(lines, '\n')
+    result = string.format('`%s:%s`\n```%s\n%s\n```', filepath, line_range, ft, code)
+  else
+    local prefix = opts.prefix or ''
+    result = string.format('%s%s:%s', prefix, filepath, line_range)
+  end
+
+  vim.fn.setreg('+', result)
+  vim.fn.setreg('"', result)
+  vim.notify(string.format('Copied: %s', result), vim.log.levels.INFO, { title = 'Code Reference' })
+end
+
+map({ 'n', 'v' }, '<leader>yr', function()
+  copy_code_reference()
+end, { desc = '[Y]ank code [R]eference (path:lines)' })
+
+map({ 'n', 'v' }, '<leader>ya', function()
+  copy_code_reference({ prefix = '@' })
+end, { desc = '[Y]ank [@]-mention code reference' })
+
+map({ 'n', 'v' }, '<leader>ym', function()
+  copy_code_reference({ markdown = true })
+end, { desc = '[Y]ank [M]arkdown code block with reference' })
+
 -- Word replacement
 map('n', '<leader>rw', [[:%s/\<<C-r><C-w>\>//gI<Left><Left><Left>]], { desc = 'Replace current word' })
 
