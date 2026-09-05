@@ -12,7 +12,7 @@ return {
       vim.cmd.hi 'Comment gui=none'
     end,
   },
-  
+
   -- Which-key for keybinding discovery
   {
     'folke/which-key.nvim',
@@ -63,17 +63,17 @@ return {
       },
     },
   },
-  
+
   -- Mini plugins for various UI enhancements
   {
     'echasnovski/mini.nvim',
     config = function()
       -- Better Around/Inside textobjects
       require('mini.ai').setup { n_lines = 500 }
-      
+
       -- Add/delete/replace surroundings
       require('mini.surround').setup()
-      
+
       -- Simple statusline
       local statusline = require 'mini.statusline'
       statusline.setup()
@@ -82,7 +82,12 @@ return {
       end
     end,
   },
-  
+
   -- Todo comments highlighting
-  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  {
+    'folke/todo-comments.nvim',
+    event = 'VimEnter',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = { signs = false },
+  },
 }
