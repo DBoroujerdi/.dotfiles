@@ -2,14 +2,69 @@
 -- Colorscheme, statusline, and visual enhancement plugins
 
 return {
-  -- Colorscheme
+  -- Colorscheme with dynamic light/dark system sync
   {
     'folke/tokyonight.nvim',
     lazy = false,
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'tokyonight-night'
-      vim.cmd.hi 'Comment gui=none'
+      local function get_system_dark_mode()
+        if vim.fn.has('mac') == 1 then
+          local res = vim.system({ 'defaults', 'read', '-g', 'AppleInterfaceStyle' }):wait()
+          return res.code == 0 and res.stdout:match('Dark') ~= nil
+        end
+        return vim.o.background == 'dark'
+      end
+
+      local function apply_theme(is_dark)
+        if is_dark == nil then
+          is_dark = get_system_dark_mode()
+        end
+
+        if is_dark then
+          vim.o.background = 'dark'
+          vim.cmd.colorscheme 'tokyonight-night'
+        else
+          vim.o.background = 'light'
+          vim.cmd.colorscheme 'tokyonight-day'
+        end
+        vim.cmd.hi 'Comment gui=none'
+      end
+
+      -- Apply initial theme based on current system appearance
+      apply_theme()
+
+      -- User command and keymap (<leader>tt) to toggle theme
+      vim.api.nvim_create_user_command('ToggleTheme', function()
+        if vim.fn.has('mac') == 1 then
+          vim.fn.system('theme-toggle')
+        else
+          apply_theme(vim.o.background == 'light')
+        end
+      end, { desc = 'Toggle between dark and light theme' })
+
+      vim.keymap.set('n', '<leader>tt', '<cmd>ToggleTheme<CR>', { desc = '[T]oggle [T]heme' })
+
+      -- Listen for SIGUSR1 to reload theme immediately across all running instances
+      local uv = vim.uv or vim.loop
+      if uv then
+        local sig = uv.new_signal()
+        if sig then
+          sig:start('sigusr1', function()
+            vim.schedule(function()
+              apply_theme()
+            end)
+          end)
+        end
+      end
+
+      -- Re-check theme whenever Neovim regains focus
+      vim.api.nvim_create_autocmd('FocusGained', {
+        group = vim.api.nvim_create_augroup('ThemeAutoSync', { clear = true }),
+        callback = function()
+          apply_theme()
+        end,
+      })
     end,
   },
 
@@ -56,7 +111,7 @@ return {
         { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
         { '<leader>d', group = '[D]ocument' },
         { '<leader>r', group = '[R]ename' },
-        { '<leader>s', group = '[S]earch' },
+        { '<leader>f', group = '[F]ind' },
         { '<leader>w', group = '[W]orkspace' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },

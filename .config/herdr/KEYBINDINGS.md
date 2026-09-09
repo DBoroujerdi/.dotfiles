@@ -114,6 +114,7 @@ Same keys and sizes as the tmux `display-popup` bindings, except magit
 | `§ a` | agent session picker (all Herdr agents) | 75×40% |
 | `§ shift+a` | idle session picker (idle/attention agents) | 75×40% |
 | `§ t` | fuzzy picker across agents, worktrees & panes (Ctrl-T for buffer text) | 90×85% |
+| `§ alt+t` | toggle dark/light theme (runs `theme-toggle`) | shell |
 
 ## Deltas from tmux
 

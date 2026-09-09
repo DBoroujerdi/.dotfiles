@@ -144,6 +144,20 @@ def main():
     header = " Herdr Workspaces (MRU) │ ENTER: switch │ C-n/C-p/j/k: cycle │ ESC: close"
     prompt = " Workspace > "
 
+    is_dark = True
+    if sys.platform == "darwin":
+        try:
+            res = subprocess.run(["defaults", "read", "-g", "AppleInterfaceStyle"],
+                                 capture_output=True, text=True)
+            is_dark = (res.returncode == 0 and "Dark" in res.stdout)
+        except Exception:
+            pass
+
+    if is_dark:
+        color_opt = "--color=bg+:#283457,bg:#1f2335,spinner:#7dcfff,hl:#565f89,fg:#c0caf5,header:#7aa2f7,info:#7aa2f7,pointer:#7dcfff,marker:#7dcfff,fg+:#c0caf5,prompt:#bb9af7,hl+:#7dcfff"
+    else:
+        color_opt = "--color=bg+:#d5d6db,bg:#e1e2e7,spinner:#587539,hl:#848cb5,fg:#3760bf,header:#2e51a2,info:#2e51a2,pointer:#587539,marker:#587539,fg+:#183c78,prompt:#9854f1,hl+:#587539"
+
     fzf_cmd = [
         "fzf",
         "--delimiter=\t",
@@ -154,7 +168,7 @@ def main():
         "--cycle",
         "--height=100%",
         "--layout=default",
-        "--color=bg+:#283457,bg:#1f2335,spinner:#7dcfff,hl:#565f89,fg:#c0caf5,header:#7aa2f7,info:#7aa2f7,pointer:#7dcfff,marker:#7dcfff,fg+:#c0caf5,prompt:#bb9af7,hl+:#7dcfff",
+        color_opt,
         "--bind=ctrl-n:down,ctrl-p:up,ctrl-j:down,ctrl-k:up,j:down,k:up"
     ]
 

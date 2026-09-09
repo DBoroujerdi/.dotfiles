@@ -8,7 +8,10 @@ onboarding = false
 
 [theme]
 # tmux uses a tokyo-night palette (#7aa2f7 borders, #1a1b26 / #c0caf5 panes)
-name = "tokyo-night"
+auto_switch = true
+dark_name = "tokyo-night"
+light_name = "tokyo-night-day"
+
 
 [terminal]
 # tmux: if-shell Darwin -> set -g default-command /bin/zsh
@@ -217,6 +220,13 @@ key = "prefix+alt+l"
 type = "plugin_action"
 command = "danielb.pr-status.view-prs"
 description = "list repo open PRs"
+
+[[keys.command]]
+key = "prefix+alt+t"
+type = "shell"
+command = "~/.dotfiles/.scripts/theme-toggle"
+description = "toggle theme (dark/light)"
+
 
 
 

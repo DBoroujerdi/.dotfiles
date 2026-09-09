@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title Toggle Theme
+# @raycast.mode silent
+
+# Optional parameters:
+# @raycast.icon 🌗
+# @raycast.packageName System
+
+# Documentation:
+# @raycast.description Toggle macOS dark/light appearance (Ghostty and Zed follow this setting)
+# @raycast.author Daniel Boroujerdi
+
+set -euo pipefail
+
+case "${1:-toggle}" in
+  dark)
+    osascript -e 'tell app "System Events" to tell appearance preferences to set dark mode to true'
+    ;;
+  light)
+    osascript -e 'tell app "System Events" to tell appearance preferences to set dark mode to false'
+    ;;
+  status)
+    osascript -e 'tell app "System Events" to tell appearance preferences to get dark mode'
+    exit 0
+    ;;
+  toggle)
+    osascript -e 'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode'
+    ;;
+  *)
+    echo "Usage: theme-toggle [dark|light|toggle|status]" >&2
+    exit 1
+    ;;
+esac
+
+# Notify all running Neovim instances to update theme immediately
+killall -SIGUSR1 nvim 2>/dev/null || true
+
+# Reload Herdr server theme/config
+if command -v herdr >/dev/null 2>&1; then
+  herdr server reload-config >/dev/null 2>&1 || true
+fi
+

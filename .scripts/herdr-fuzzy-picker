@@ -23,15 +23,38 @@ BOLD = "\033[1m"
 DIM = "\033[2m"
 ITALIC = "\033[3m"
 
-# Palette (Tokyo Night aligned)
-CYAN = "\033[38;2;122;162;247m"       # #7aa2f7
-MAGENTA = "\033[38;2;187;154;247m"   # #bb9af7
-GREEN = "\033[38;2;158;206;106m"     # #9ece6a
-YELLOW = "\033[38;2;224;175;104m"    # #e0af68
-ORANGE = "\033[38;2;255;158;100m"    # #ff9e64
-RED = "\033[38;2;247;118;142m"       # #f7768e
-GRAY = "\033[38;2;86;95;137m"        # #565f89
-WHITE = "\033[38;2;192;202;245m"     # #c0caf5
+def is_dark_mode():
+    if sys.platform == "darwin":
+        try:
+            res = subprocess.run(["defaults", "read", "-g", "AppleInterfaceStyle"],
+                                 capture_output=True, text=True)
+            return res.returncode == 0 and "Dark" in res.stdout
+        except Exception:
+            pass
+    return True
+
+DARK = is_dark_mode()
+
+# Palette (Tokyo Night / Tokyo Night Day aligned)
+if DARK:
+    CYAN = "\033[38;2;122;162;247m"       # #7aa2f7
+    MAGENTA = "\033[38;2;187;154;247m"   # #bb9af7
+    GREEN = "\033[38;2;158;206;106m"     # #9ece6a
+    YELLOW = "\033[38;2;224;175;104m"    # #e0af68
+    ORANGE = "\033[38;2;255;158;100m"    # #ff9e64
+    RED = "\033[38;2;247;118;142m"       # #f7768e
+    GRAY = "\033[38;2;86;95;137m"        # #565f89
+    WHITE = "\033[38;2;192;202;245m"     # #c0caf5
+else:
+    CYAN = "\033[38;2;46;125;233m"       # #2e7de9
+    MAGENTA = "\033[38;2;152;84;241m"    # #9854f1
+    GREEN = "\033[38;2;88;117;57m"       # #587539
+    YELLOW = "\033[38;2;140;108;62m"     # #8c6c3e
+    ORANGE = "\033[38;2;177;92;0m"       # #b15c00
+    RED = "\033[38;2;245;42;101m"        # #f52a65
+    GRAY = "\033[38;2;132;140;181m"      # #848cb5
+    WHITE = "\033[38;2;52;59;88m"        # #343b58
+
 
 STATUS_ICONS = {
     "idle": "💤",
@@ -420,6 +443,12 @@ def main():
     header = "Enter: Focus  │  Ctrl-A: @Agents  │  Ctrl-W: @Worktrees  │  Ctrl-P: @Panes  │  Ctrl-T: Deep Search  │  Ctrl-E: Reset"
     prompt = "Herdr > " if not include_content else "Buffer Text > "
 
+    color_opt = (
+        "--color=bg+:#283457,bg:#1f2335,spinner:#7dcfff,hl:#565f89,fg:#c0caf5,header:#7aa2f7,info:#7aa2f7,pointer:#7dcfff,marker:#7dcfff,fg+:#c0caf5,prompt:#bb9af7,hl+:#7dcfff"
+        if DARK
+        else "--color=bg+:#d5d6db,bg:#e1e2e7,spinner:#587539,hl:#848cb5,fg:#3760bf,header:#2e51a2,info:#2e51a2,pointer:#587539,marker:#587539,fg+:#183c78,prompt:#9854f1,hl+:#587539"
+    )
+
     fzf_cmd = [
         "fzf",
         "--ansi",
@@ -432,6 +461,7 @@ def main():
         "--reverse",
         "--no-sort",
         "--height=100%",
+        color_opt,
         "--bind=ctrl-a:change-prompt(Agents > )+change-query(AGENT )",
         "--bind=ctrl-w:change-prompt(Worktrees > )+change-query(WORKTREE )",
         "--bind=ctrl-p:change-prompt(Panes > )+change-query(PANE )",

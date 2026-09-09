@@ -1,4 +1,4 @@
-command = /usr/bin/zsh
+command = /bin/zsh
 
 macos-option-as-alt = true
 
@@ -7,3 +7,12 @@ shell-integration = zsh
 link-url = true
 
 keybind = shift+enter=text:\x1b\r
+
+font-family = Lilex Nerd Font Mono
+font-size = 11
+adjust-cell-height = 24.46%
+font-feature = -calt
+font-feature = -liga
+
+# Follows the macOS appearance, as Zed's theme.mode = "system" does.
+theme = light:Atom One Light,dark:Atom One Dark

@@ -7,6 +7,16 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "icon_theme": {
+    "mode": "light",
+    "light": "Zed (Default)",
+    "dark": "Zed (Default)"
+  },
+  "theme": {
+    "mode": "light",
+    "light": "One Light",
+    "dark": "One Dark"
+  },
   "diagnostics": {
     "inline": {
       "enabled": true
@@ -16,6 +26,9 @@
     "oxc": true
   },
   "agent_servers": {
+    "antigravity-acp": {
+      "type": "registry"
+    },
     "opencode": {
       "type": "registry"
     },
@@ -23,6 +36,12 @@
       "type": "registry"
     },
     "claude-acp": {
+      "default_config_options": {
+        "fast": true,
+        "effort": "high",
+        "mode": "auto",
+        "model": "opus[1m]"
+      },
       "type": "registry"
     }
   },
@@ -37,12 +56,23 @@
     "dock": "right"
   },
   "agent": {
+    "tool_permissions": {
+      "tools": {
+        "terminal": {
+          "always_allow": [
+            {
+              "pattern": "^bun\\s+typecheck(\\s|$)"
+            }
+          ]
+        }
+      }
+    },
     "dock": "left",
     "default_model": {
+      "effort": "high",
       "provider": "zed.dev",
-      "model": "claude-sonnet-4-6",
+      "model": "claude-opus-4-8",
       "enable_thinking": true,
-      "effort": "medium",
     },
     "favorite_models": [],
     "inline_assistant_model": {
