@@ -1,0 +1,1 @@
+../skills/comment-sicko/SKILL.md
