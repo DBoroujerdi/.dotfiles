@@ -43,3 +43,22 @@ if command -v herdr >/dev/null 2>&1; then
   herdr server reload-config >/dev/null 2>&1 || true
 fi
 
+# Ensure Claude Code CLI theme is set to 'auto' so it listens to terminal background updates
+if [ -f "$HOME/.claude/settings.json" ]; then
+  python3 -c "
+import json, os
+p = os.path.expanduser('~/.claude/settings.json')
+try:
+    with open(p, 'r') as f:
+        d = json.load(f)
+    if d.get('theme') != 'auto':
+        d['theme'] = 'auto'
+        with open(p, 'w') as f:
+            json.dump(d, f, indent=2)
+except Exception:
+    pass
+" 2>/dev/null || true
+fi
+
+
+
