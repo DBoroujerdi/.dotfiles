@@ -1,13 +1,9 @@
 id = "danielb.pr-status"
 name = "Herdr PR Status"
-version = "0.1.0"
+version = "0.2.0"
 min_herdr_version = "0.7.0"
-description = "Displays active open PRs and approval status in the Herdr sidebar, strictly scoped to the focused Git repository."
+description = "Displays active GitHub Pull Request number and review state underneath each workspace/worktree, with on/off toggle and multi-repo support."
 platforms = ["macos", "linux"]
-
-[[events]]
-on = "workspace.focused"
-command = ["python3", "pr_status.py"]
 
 [[events]]
 on = "workspace.created"
@@ -24,6 +20,12 @@ command = ["python3", "pr_status.py"]
 [[events]]
 on = "worktree.opened"
 command = ["python3", "pr_status.py"]
+
+[[actions]]
+id = "toggle"
+title = "PR Status: Toggle On/Off"
+contexts = ["workspace", "global"]
+command = ["python3", "pr_status.py", "--toggle"]
 
 [[actions]]
 id = "refresh"
