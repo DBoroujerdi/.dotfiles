@@ -105,6 +105,7 @@ Same keys and sizes as the tmux `display-popup` bindings, except magit
 | Keys | Command | Size |
 |---|---|---|
 | `§ g` | lazygit | 80×80% |
+| `§ shift+h` | gh dash (GitHub dashboard / PRs) | 85×85% |
 | `§ alt+g` | magit | 60×60% |
 | `§ shift+r` | ranger | 80×80% |
 | `§ shift+t` | scratch zsh | 75×75% |
