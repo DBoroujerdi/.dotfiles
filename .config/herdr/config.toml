@@ -67,8 +67,8 @@ goto = "prefix+space"                        # moved off prefix+g, which is lazy
 # ── Worktrees (tmux: the `W` display-menu, via the `wt` scripts) ─────────────
 new_worktree = "prefix+shift+g"
 open_worktree = "prefix+shift+o"
-# remove_worktree is destructive and left unbound; set it if you want it.
-remove_worktree = ""
+# remove_worktree is destructive; opens confirmation prompt before deleting
+remove_worktree = "prefix+alt+d"
 
 # ── Session / app ────────────────────────────────────────────────────────────
 help = "prefix+?"                    # tmux: list-keys

@@ -84,7 +84,7 @@ out as `<repo>/<branch-slug>`.
 |---|---|
 | `§ shift+g` | New worktree |
 | `§ shift+o` | Open worktree |
-| — | Remove worktree (**unbound** — destructive; set `remove_worktree` to enable) |
+| `§ alt+d` | Remove / delete worktree (prompts confirmation) |
 
 ## Session / app
 
