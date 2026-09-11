@@ -1,2 +1,4 @@
 .config/zed/prompts/
 .zshrc.work
+
+__pycache__
